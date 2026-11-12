@@ -29,3 +29,6 @@ Thumbs.db
 
 # Memory dumps
 *.hprof
+
+# Local session cookies (never commit)
+cookies.txt
