@@ -1,82 +1,90 @@
-# TA3 – Open in VLC (Chrome extension)
+# TA3 – Open in VLC (rozšírenie pre Chrome)
 
-Adds an orange **▶ Open in VLC** button next to the red *Live* button in the TA3 header on
-video pages (`ta3.com/relacie/...`). Clicking it opens the episode's HLS stream directly in VLC,
-bypassing TA3's web player (useful when the web player just spins).
+Pridá oranžové tlačidlo **▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke TA3 na stránkach
+s videom (`ta3.com/relacie/...`). Kliknutím sa video z relácie otvorí priamo vo VLC, bez webového
+prehrávača TA3. Hodí sa, keď sa prehrávač na stránke len točí a video nenaštartuje.
 
-## How it works
+## Ako to funguje
 
-1. `content.js` finds the episode's `videoId` in the page and shows the button.
-2. On click, `background.js` fetches Livebox's `vod-source.js` and builds the `.m3u8` URL
-   (same way the downloader does).
-3. Chrome can't launch desktop apps, so the URL is sent via
+1. `content.js` nájde na stránke `videoId` relácie a zobrazí tlačidlo.
+2. Po kliknutí `background.js` stiahne `vod-source.js` z Livebox a zloží adresu `.m3u8`
+   (rovnako ako downloader v tomto repozitári).
+3. Chrome nemôže spúšťať programy na počítači, preto sa adresa pošle cez
    [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging)
-   to a small Bash helper (`host/ta3_vlc_host.sh`) that runs `open -a VLC <url>`.
-   The helper only accepts `https://*.livebox.sk` URLs (strict regex allow-list).
+   malému pomocnému skriptu v Bashi (`host/ta3_vlc_host.sh`), ktorý spustí `open -a VLC <adresa>`.
+   Skript prijme iba adresy `https://*.livebox.sk` (prísny zoznam povolených znakov).
 
-`key.pem` / the `"key"` in `manifest.json` exist only to pin the extension ID
-(`extension-id.txt`) so the native-messaging registration can allow exactly this extension.
+Súbor `key.pem` a pole `"key"` v `manifest.json` slúžia len na to, aby mal rozšírenie stále rovnaké ID
+(`extension-id.txt`). Vďaka tomu môže registrácia pomocníka povoliť presne toto rozšírenie.
 
-## Requirements
+## Požiadavky
 
-- macOS (Windows/Linux need their own helper — not implemented yet)
+- macOS (pre Windows a Linux treba vlastného pomocníka, zatiaľ nie je hotový)
 - Google Chrome
-- [VLC](https://www.videolan.org/) installed in `/Applications`
+- [VLC](https://www.videolan.org/) nainštalovaný v `/Applications`
 
-## Install
+Nič iné netreba. Pomocník používa len nástroje, ktoré sú súčasťou macOS.
 
-### 1. Register the native helper (once)
+## Inštalácia
+
+Inštalácia má dva kroky, oba je potrebné urobiť. Rozšírenie samotné bez pomocníka nič neotvorí.
+
+### Krok 1: Zaregistrujte pomocníka (stačí raz)
+
+V termináli:
 
 ```sh
 cd ta3-vlc-extension
 ./install.sh
 ```
 
-This writes `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/sk.ta3.vlc.json`,
-which points Chrome at `host/ta3_vlc_host.sh` and allows only this extension's ID to talk to it.
-No other dependencies are needed (the helper uses only tools that ship with macOS).
+Skript vytvorí súbor
+`~/Library/Application Support/Google/Chrome/NativeMessagingHosts/sk.ta3.vlc.json`,
+ktorý Chromu povie, kde je `host/ta3_vlc_host.sh`, a povolí komunikáciu iba tomuto rozšíreniu.
 
-### 2. Load the extension in Chrome
+Ak sa po spustení zobrazí `Host registered.`, krok 1 je hotový.
 
-1. Open `chrome://extensions`
-2. Turn on **Developer mode** (top-right toggle)
-3. Click **Load unpacked** and select the `ta3-vlc-extension/extension` folder
-4. Make sure the extension is **enabled** (toggle on its card). Optionally pin it via the
-   puzzle-piece menu — it has no toolbar UI, so this isn't required.
+### Krok 2: Nahrajte rozšírenie do Chrome
 
-The extension ID shown on its card must be `hmeepeicibmdpfpbcjmiaaekmkaiijle`
-(see `extension-id.txt`). If it differs, the helper will refuse to connect.
+1. Otvorte v Chrome adresu `chrome://extensions`.
+2. Vpravo hore zapnite **Režim pre vývojárov** (*Developer mode*).
+3. Kliknite na **Načítať rozbalené** (*Load unpacked*) a vyberte priečinok `ta3-vlc-extension/extension`.
+4. Skontrolujte, že je rozšírenie **zapnuté** (prepínač na jeho karte).
 
-### 3. Use it
+Na karte rozšírenia musí byť ID `hmeepeicibmdpfpbcjmiaaekmkaiijle` (rovnaké ako v `extension-id.txt`).
+Ak je iné, pomocník odmietne spojenie.
 
-Open any TA3 episode page, e.g.
-`https://www.ta3.com/relacie/hlavne-spravy/relacia/1082413/hlavne-spravy-z-12-novembra`.
-Reload the page if it was already open. Click **▶ Open in VLC** — VLC starts playing the stream.
+### Krok 3: Vyskúšajte
 
-## Updating
+1. Otvorte ľubovoľnú reláciu na TA3, napríklad
+   `https://www.ta3.com/relacie/hlavne-spravy/relacia/1082413/hlavne-spravy-z-12-novembra`.
+2. Ak bola stránka otvorená už predtým, obnovte ju (F5).
+3. V hlavičke vedľa červeného **Live** uvidíte oranžové tlačidlo **▶ Open in VLC**. Kliknite naň.
+4. Spustí sa VLC a začne prehrávať video.
 
-After pulling changes to the extension files, click the refresh icon on its card in
-`chrome://extensions`, then reload the TA3 tab. Re-run `./install.sh` only if you move the
-project folder.
+## Aktualizácia
 
-## Troubleshooting
+Po stiahnutí zmien v súboroch rozšírenia kliknite na `chrome://extensions` na ikonu obnovenia na jeho karte
+a potom obnovte kartu s TA3. Skript `./install.sh` spúšťajte znova iba vtedy, ak ste presunuli priečinok projektu.
 
-| Symptom | Cause / fix |
+## Riešenie problémov
+
+| Problém | Príčina / riešenie |
 |---|---|
-| No button on the page | Reload the tab; check the extension is enabled; the page must contain a video player |
-| Button appears as a floating box instead of next to *Live* | TA3 changed its header markup; the fallback is intentional |
-| Alert: `Specified native messaging host not found` | Run `./install.sh`, then restart Chrome |
-| Alert: `Access to the specified native messaging host is forbidden` | Extension ID differs from `extension-id.txt` — reload it from this folder |
-| Alert: `Native host has exited` | Re-run `./install.sh` (folder moved?). Check VLC is in `/Applications` |
-| VLC opens but shows an error | The stream auth token expired or TA3 changed the URL scheme; retry, and check `background.js` against `ta3-cli/downloader.js` |
+| Na stránke nie je tlačidlo | Obnovte kartu, skontrolujte, či je rozšírenie zapnuté a či stránka obsahuje video |
+| Tlačidlo sa zobrazí ako plávajúce okienko, nie vedľa *Live* | TA3 zmenila hlavičku stránky, ide o zámernú záložnú verziu |
+| Hlásenie `Specified native messaging host not found` | Spustite `./install.sh` a reštartujte Chrome |
+| Hlásenie `Access to the specified native messaging host is forbidden` | ID rozšírenia sa líši od `extension-id.txt`, nahrajte ho znova z tohto priečinka |
+| Hlásenie `Native host has exited` | Spustite znova `./install.sh` (presunuli ste priečinok?) a skontrolujte, či je VLC v `/Applications` |
+| VLC sa otvorí, ale zobrazí chybu | Vypršal prístupový token alebo TA3 zmenila formát adresy. Skúste znova a porovnajte `background.js` s `ta3-cli/downloader.js` |
 
-Check the real error in the page's DevTools console (`[TA3 VLC]`) or in the service worker log
+Skutočnú chybu nájdete v konzole vývojárskych nástrojov stránky (`[TA3 VLC]`) alebo v logu service workera
 (`chrome://extensions` → *service worker*).
 
-## Uninstall
+## Odinštalovanie
 
 ```sh
 rm "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/sk.ta3.vlc.json"
 ```
 
-then remove the extension in `chrome://extensions`.
+Potom odstráňte rozšírenie na `chrome://extensions`.
