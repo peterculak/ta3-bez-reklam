@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "TA3 – Open in VLC",
+  "version": "1.0.0",
+  "description": "Adds an 'Open in VLC' button to TA3 video pages.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhzEvyNSMwsFQt6RyA2g1BBoJK5t48B4UCG9uLJsCSiNvh4Ovjr2pTDliJFqSR58kS/B8gnM2FqEfyvTSbpeWAHG8d3UBPyGaRt23KMExtBfXv5RgREZFPyVCdDEwjLbw/tiIViZekrC6pfLtT5OGristoniyM9UDFfIqa95UlvQr7nPxYiPeUpQHacxvKzMooUjS3tL7u202sO8kmBUw/IU5yX6/wbHYNJ8LzQ4eT+aevM+skrzhqLo396nDo9rQhGVXOmIC8ND6lTReToiGCxjgw0Oq4AfGkPZokroszgPScK+6TAbYaNzr/sCC8gxkJ6YxjNuJsWfZRDk1TfzAlQIDAQAB",
+  "permissions": ["nativeMessaging"],
+  "host_permissions": ["https://embed.livebox.cz/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    { "matches": ["https://www.ta3.com/*", "https://ta3.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ]
+}
