@@ -11,18 +11,17 @@ bypassing TA3's web player (useful when the web player just spins).
    (same way the downloader does).
 3. Chrome can't launch desktop apps, so the URL is sent via
    [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging)
-   to a small helper (`host/ta3_vlc_host.js`) that runs `open -a VLC <url>`.
-   The helper only accepts `https://*.livebox.sk` URLs.
+   to a small Bash helper (`host/ta3_vlc_host.sh`) that runs `open -a VLC <url>`.
+   The helper only accepts `https://*.livebox.sk` URLs (strict regex allow-list).
 
 `key.pem` / the `"key"` in `manifest.json` exist only to pin the extension ID
 (`extension-id.txt`) so the native-messaging registration can allow exactly this extension.
 
 ## Requirements
 
-- macOS
+- macOS (Windows/Linux need their own helper — not implemented yet)
 - Google Chrome
 - [VLC](https://www.videolan.org/) installed in `/Applications`
-- Node.js (`node` on your `PATH`)
 
 ## Install
 
@@ -33,11 +32,9 @@ cd ta3-vlc-extension
 ./install.sh
 ```
 
-This does two things:
-
-- generates `host/run_host.sh`, a wrapper that runs the helper with your `node`
-- writes `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/sk.ta3.vlc.json`,
-  allowing only this extension's ID to talk to the helper
+This writes `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/sk.ta3.vlc.json`,
+which points Chrome at `host/ta3_vlc_host.sh` and allows only this extension's ID to talk to it.
+No other dependencies are needed (the helper uses only tools that ship with macOS).
 
 ### 2. Load the extension in Chrome
 
@@ -60,7 +57,7 @@ Reload the page if it was already open. Click **▶ Open in VLC** — VLC starts
 
 After pulling changes to the extension files, click the refresh icon on its card in
 `chrome://extensions`, then reload the TA3 tab. Re-run `./install.sh` only if you move the
-project folder or change your Node install.
+project folder.
 
 ## Troubleshooting
 
@@ -70,7 +67,7 @@ project folder or change your Node install.
 | Button appears as a floating box instead of next to *Live* | TA3 changed its header markup; the fallback is intentional |
 | Alert: `Specified native messaging host not found` | Run `./install.sh`, then restart Chrome |
 | Alert: `Access to the specified native messaging host is forbidden` | Extension ID differs from `extension-id.txt` — reload it from this folder |
-| Alert: `Native host has exited` | `node` path changed; re-run `./install.sh`. Check VLC is in `/Applications` |
+| Alert: `Native host has exited` | Re-run `./install.sh` (folder moved?). Check VLC is in `/Applications` |
 | VLC opens but shows an error | The stream auth token expired or TA3 changed the URL scheme; retry, and check `background.js` against `ta3-cli/downloader.js` |
 
 Check the real error in the page's DevTools console (`[TA3 VLC]`) or in the service worker log

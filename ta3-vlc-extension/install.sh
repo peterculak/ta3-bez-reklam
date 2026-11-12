@@ -3,18 +3,16 @@
 # Writes ONE json file: ~/Library/Application Support/Google/Chrome/NativeMessagingHosts/sk.ta3.vlc.json
 set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
-NODE="$(command -v node)" || { echo "node not found"; exit 1; }
 ID="$(cat "$DIR/extension-id.txt")"
-WRAP="$DIR/host/run_host.sh"
-printf '#!/bin/bash\nexec "%s" "%s/host/ta3_vlc_host.js"\n' "$NODE" "$DIR" > "$WRAP"
-chmod +x "$WRAP"
+HOST="$DIR/host/ta3_vlc_host.sh"
+chmod +x "$HOST"
 T="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
 mkdir -p "$T"
 cat > "$T/sk.ta3.vlc.json" <<JSON
 {
   "name": "sk.ta3.vlc",
   "description": "Open TA3 streams in VLC",
-  "path": "$WRAP",
+  "path": "$HOST",
   "type": "stdio",
   "allowed_origins": ["chrome-extension://$ID/"]
 }
