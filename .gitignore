@@ -32,3 +32,6 @@ Thumbs.db
 
 # Local session cookies (never commit)
 cookies.txt
+
+# Local experiments and throwaway scripts
+scratch/
