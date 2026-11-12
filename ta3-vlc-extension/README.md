@@ -1,18 +1,18 @@
-# TA3 – Open in VLC (rozšírenie pre Chrome)
+# TA3 bez reklám – Open in VLC (rozšírenie pre Chrome)
 
-Pridá oranžové tlačidlo **▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke TA3 na stránkach
-s videom (`ta3.com/relacie/...`). Kliknutím sa video z relácie otvorí priamo vo VLC, bez webového
-prehrávača TA3. Hodí sa, keď sa prehrávač na stránke len točí a video nenaštartuje.
+**TA3 bez reklám**: pozerajte relácie a archív TA3 vo VLC, bez reklám a bez webového prehrávača.
+Rozšírenie pridá oranžové tlačidlo **▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke TA3 na
+stránkach s videom (`ta3.com/relacie/...`). Kliknutím sa video otvorí priamo vo VLC. Hodí sa aj vtedy, keď
+sa prehrávač na stránke len točí a video nenaštartuje.
+
+Kľúčové slová: TA3 bez reklám, TA3 archív, Hlavné správy, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
 
 ## Ako to funguje
 
-1. `content.js` nájde na stránke `videoId` relácie a zobrazí tlačidlo.
-2. Po kliknutí `background.js` stiahne `vod-source.js` z Livebox a zloží adresu `.m3u8`
-   (rovnako ako downloader v tomto repozitári).
-3. Chrome nemôže spúšťať programy na počítači, preto sa adresa pošle cez
-   [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging)
-   malému pomocnému skriptu v Bashi (`host/ta3_vlc_host.sh`), ktorý spustí `open -a VLC <adresa>`.
-   Skript prijme iba adresy `https://*.livebox.sk` (prísny zoznam povolených znakov).
+Chrome nemôže spúšťať programy na počítači, preto rozšírenie komunikuje s malým pomocným skriptom v Bashi
+(`host/ta3_vlc_host.sh`) cez
+[native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging).
+Skript spustí VLC a prijíma iba adresy `https://*.livebox.sk` (prísny zoznam povolených znakov).
 
 Súbor `key.pem` a pole `"key"` v `manifest.json` slúžia len na to, aby mal rozšírenie stále rovnaké ID
 (`extension-id.txt`). Vďaka tomu môže registrácia pomocníka povoliť presne toto rozšírenie.
