@@ -1,25 +1,28 @@
-// JOJ play (Tivio) – replace the stock player with a plain <video> + dash.js, plus "Open in VLC".
-// The stock player gets a tokenised DASH manifest at runtime, so we pick up the .mpd URL it requests
-// (Resource Timing is shared with the page) and play that same URL ourselves.
+// JOJ – replace the stock players with a plain <video> + dash.js / hls.js, plus "Open in VLC".
+// Runs in two places:
+//  - play.joj.sk/player/*  (Tivio, DASH .mpd with a tokenised URL known only at runtime)
+//  - media.joj.sk/embed/*  (iframe on www.joj.sk, plain HLS master.m3u8)
+// Either way we pick up the manifest URL the stock player requests (Resource Timing is shared with the page)
+// and play that same stream ourselves.
 (function () {
   if (document.getElementById('joj-own-player')) return;
 
-  const MPD_RE = /^https:\/\/[A-Za-z0-9.-]+\.joj\.sk\/[^?#]*\.mpd(?:[?#]|$)/;
-  const findMpd = () => {
-    const e = performance.getEntriesByType('resource').find((r) => MPD_RE.test(r.name));
+  const STREAM_RE = /^https:\/\/[A-Za-z0-9.-]+\.joj\.sk\/[^?#]*(?:\.mpd|master\.m3u8)(?:[?#]|$)/;
+  const findStream = () => {
+    const e = performance.getEntriesByType('resource').find((r) => STREAM_RE.test(r.name));
     return e && e.name;
   };
 
   let tries = 0;
   const timer = setInterval(() => {
-    const url = findMpd();
+    const url = findStream();
     if (url) { clearInterval(timer); takeOver(url); }
     else if (++tries > 120) clearInterval(timer); // give up after ~30 s, stock player stays
   }, 250);
 
-  function takeOver(mpdUrl) {
-    if (!window.dashjs) return;
-    const root = document.getElementById('__next');
+  function takeOver(streamUrl) {
+    const isDash = /\.mpd(?:[?#]|$)/.test(streamUrl);
+    if (isDash ? !window.dashjs : !window.Hls) return;
 
     const wrap = document.createElement('div');
     wrap.id = 'joj-own-player';
@@ -54,19 +57,23 @@
     document.addEventListener('play', onPlay, true);
     document.querySelectorAll('video').forEach(quiet);
 
+    // hide the stock page content (don't remove it: the stock apps keep references to their DOM)
+    const hidden = [...document.body.children].filter((el) => el !== wrap && getComputedStyle(el).display !== 'none');
+    hidden.forEach((el) => el.style.setProperty('display', 'none', 'important'));
+
     let player = null;
     const restore = () => {
       document.removeEventListener('play', onPlay, true);
       if (player) player.destroy();
       wrap.remove();
-      if (root) root.style.removeProperty('display');
+      hidden.forEach((el) => el.style.removeProperty('display'));
     };
     origBtn.addEventListener('click', (e) => { e.preventDefault(); restore(); });
 
     vlcBtn.addEventListener('click', (e) => {
       e.preventDefault();
       vlcBtn.textContent = 'Opening…';
-      chrome.runtime.sendMessage({ type: 'open-vlc-url', url: mpdUrl }, (r) => {
+      chrome.runtime.sendMessage({ type: 'open-vlc-url', url: streamUrl }, (r) => {
         const err = chrome.runtime.lastError ? chrome.runtime.lastError.message : (!r || !r.ok ? (r && r.error) || 'unknown' : null);
         if (err) { console.error('[JOJ VLC]', err); vlcBtn.title = err; }
         vlcBtn.textContent = err ? '✖ Failed' : '✔ Sent to VLC';
@@ -74,14 +81,20 @@
       });
     });
 
-    if (root) root.style.setProperty('display', 'none', 'important');
     document.body.appendChild(wrap);
 
-    player = dashjs.MediaPlayer().create();
-    player.on(dashjs.MediaPlayer.events.ERROR, (e) => {
-      console.error('[JOJ VLC] dash error', e && e.error);
+    if (isDash) {
+      player = dashjs.MediaPlayer().create();
+      player.on(dashjs.MediaPlayer.events.ERROR, (e) => { console.error('[JOJ VLC] dash error', e && e.error); restore(); });
+      player.initialize(video, streamUrl, true);
+    } else if (Hls.isSupported()) {
+      player = new Hls();
+      player.on(Hls.Events.ERROR, (_e, d) => { if (d.fatal) { console.error('[JOJ VLC] hls fatal', d.type, d.details); restore(); } });
+      player.loadSource(streamUrl);
+      player.attachMedia(video);
+      video.play().catch(() => {}); // autoplay may be blocked, the user can press play
+    } else {
       restore();
-    });
-    player.initialize(video, mpdUrl, true);
+    }
   }
 })();
