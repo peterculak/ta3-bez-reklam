@@ -53,20 +53,23 @@
     wrap.appendChild(bar);
 
     // show the pills only while the mouse is over the player (like the native controls):
-    // fade in on movement, fade out after 2.5 s idle or on leave; stay visible while paused or hovered
-    let hideTimer = null, overBar = false;
+    // fade in on movement, fade out after 2.5 s idle or when the mouse leaves (paused or not),
+    // except while the pointer is actually on the pills
+    let hideTimer = null;
     const showBar = (on) => { bar.style.opacity = on ? '.85' : '0'; bar.style.pointerEvents = on ? 'auto' : 'none'; };
+    const hideNow = () => { clearTimeout(hideTimer); showBar(false); };
     const poke = () => {
       showBar(true);
       clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => { if (!overBar && !video.paused) showBar(false); }, 2500);
+      hideTimer = setTimeout(() => { if (!bar.matches(':hover')) showBar(false); }, 2500);
     };
     wrap.addEventListener('mousemove', poke);
-    wrap.addEventListener('mouseleave', () => { clearTimeout(hideTimer); if (!video.paused) showBar(false); });
-    bar.addEventListener('mouseenter', () => { overBar = true; });
-    bar.addEventListener('mouseleave', () => { overBar = false; });
-    video.addEventListener('pause', () => showBar(true));
-    video.addEventListener('play', poke);
+    // leaving the (iframe) document is reported differently across browsers, so listen to all of them
+    wrap.addEventListener('mouseleave', hideNow);
+    document.addEventListener('mouseleave', hideNow);
+    document.documentElement.addEventListener('mouseleave', hideNow);
+    document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) hideNow(); });
+    window.addEventListener('blur', hideNow);
 
     // keep the stock player quiet: pause anything that isn't ours, now and whenever it tries to play again
     const quiet = (v) => { if (v !== video) { v.pause(); v.muted = true; } };
