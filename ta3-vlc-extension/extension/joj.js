@@ -37,7 +37,8 @@
 
     // top-right pill row: Open in VLC | original player
     const bar = document.createElement('div');
-    Object.assign(bar.style, { position: 'absolute', right: '8px', top: '8px', zIndex: 5, display: 'flex', gap: '6px', opacity: .8 });
+    Object.assign(bar.style, { position: 'absolute', right: '8px', top: '8px', zIndex: 5, display: 'flex', gap: '6px',
+      opacity: 0, pointerEvents: 'none', transition: 'opacity .2s' });
     const pill = (text) => {
       const a = document.createElement('a');
       a.href = '#';
@@ -50,6 +51,22 @@
     const vlcBtn = pill('▶ Open in VLC');
     const origBtn = pill('Pôvodný prehrávač');
     wrap.appendChild(bar);
+
+    // show the pills only while the mouse is over the player (like the native controls):
+    // fade in on movement, fade out after 2.5 s idle or on leave; stay visible while paused or hovered
+    let hideTimer = null, overBar = false;
+    const showBar = (on) => { bar.style.opacity = on ? '.85' : '0'; bar.style.pointerEvents = on ? 'auto' : 'none'; };
+    const poke = () => {
+      showBar(true);
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => { if (!overBar && !video.paused) showBar(false); }, 2500);
+    };
+    wrap.addEventListener('mousemove', poke);
+    wrap.addEventListener('mouseleave', () => { clearTimeout(hideTimer); if (!video.paused) showBar(false); });
+    bar.addEventListener('mouseenter', () => { overBar = true; });
+    bar.addEventListener('mouseleave', () => { overBar = false; });
+    video.addEventListener('pause', () => showBar(true));
+    video.addEventListener('play', poke);
 
     // keep the stock player quiet: pause anything that isn't ours, now and whenever it tries to play again
     const quiet = (v) => { if (v !== video) { v.pause(); v.muted = true; } };
