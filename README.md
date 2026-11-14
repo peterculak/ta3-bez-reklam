@@ -6,6 +6,7 @@ Nástroje na pozeranie a sťahovanie relácií TA3 a ďalších slovenských arc
 
 Vlastný prehrávač pre archív TA3, bez reklám, a oranžové tlačidlo **▶ Open in VLC** vedľa tlačidla *Live*
 (otvorí reláciu vo VLC). Funguje aj vtedy, keď sa pôvodné video na stránke len točí.
+Rovnako nahrádza prehrávač na **JOJ play** (`play.joj.sk/player/...`). Titulky nie sú podporované a ani sa neplánujú.
 
 ➡️ **[Návod na inštaláciu a použitie](ta3-vlc-extension/README.md)** (priečinok [`ta3-vlc-extension/`](ta3-vlc-extension))
 
