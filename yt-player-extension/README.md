@@ -41,6 +41,17 @@ Medzerník alebo `k` prehrá/pozastaví, šípky vľavo/vpravo posun o 5 s, `j`/
 - Videá s vekovým obmedzením alebo len pre členov nemusia fungovať. V takom prípade sa vráti pôvodný prehrávač.
 - Titulky nie sú podporované a ani sa neplánujú.
 
+## Známe problémy
+
+- **Prvé načítanie nového videa často zlyhá, po obnovení stránky (F5) to funguje.** Pri zlyhaní sa vráti pôvodný
+  prehrávač. Príčina zatiaľ nie je zistená. Pomocník (`yt-dlp`) vracia platné adresy a tie isté adresy sa v Chrome
+  prehrajú, takže chyba je pravdepodobne v prvom spustení prehrávania v rozšírení. Už je pridané: opakovanie
+  požiadavky, reštart s novou adresou pri chybe média, časový limit 10 s a obnovenie pôvodného prehrávača po
+  znovunačítaní rozšírenia. Ak sa to opakuje, v konzole stránky (filter `YT own player`) je dôvod zlyhania.
+- Pri vysokej kvalite sa video môže zasekávať, YouTube spomaľuje súvislé sťahovanie (pozri Obmedzenia).
+
+Rozpracovaná verzia (pozastavené).
+
 ## Riešenie problémov
 
 | Problém | Riešenie |
