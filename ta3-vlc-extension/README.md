@@ -1,21 +1,32 @@
 # TA3 bez reklám – Open in VLC (rozšírenie pre Chrome)
 
-**TA3 bez reklám**: pozerajte relácie a archív TA3 vo VLC, bez reklám a bez webového prehrávača.
-Rozšírenie pridá oranžové tlačidlo **▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke TA3 na
-stránkach s videom (`ta3.com/relacie/...`). Kliknutím sa video otvorí priamo vo VLC. Hodí sa aj vtedy, keď
-sa prehrávač na stránke len točí a video nenaštartuje.
+**TA3 bez reklám**: pozerajte relácie a archív TA3 bez reklám a bez zaseknutého prehrávača.
+
+Rozšírenie robí na stránkach s archívnym videom (`ta3.com/relacie/...`) dve veci:
+
+1. **Vlastný prehrávač.** Nahradí prehrávač TA3 jednoduchým prehrávačom, ktorý spustí video hneď, bez reklám.
+   Funguje aj vtedy, keď sa pôvodný prehrávač len točí. Ak by niečo zlyhalo, vráti sa pôvodný prehrávač, a
+   kedykoľvek naň môžete prepnúť odkazom **Pôvodný prehrávač TA3** v rohu videa.
+2. **Tlačidlo ▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke. Jedným kliknutím sa relácia otvorí vo VLC.
+
+Prehrávanie priamych prenosov (Live) zatiaľ nie je podporované. Titulky a výber kvality vo vlastnom prehrávači
+zatiaľ nie sú.
 
 Kľúčové slová: TA3 bez reklám, TA3 archív, Hlavné správy, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
 
 ## Ako to funguje
 
-Chrome nemôže spúšťať programy na počítači, preto rozšírenie komunikuje s malým pomocným skriptom v Bashi
-(`host/ta3_vlc_host.sh`) cez
-[native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging).
-Skript spustí VLC a prijíma iba adresy `https://*.livebox.sk` (prísny zoznam povolených znakov).
+Vlastný prehrávač funguje priamo v prehliadači a nepotrebuje nič ďalšie. Na otvorenie vo VLC je potrebný malý
+pomocný skript v Bashi (`host/ta3_vlc_host.sh`), s ktorým rozšírenie komunikuje cez
+[native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging), pretože Chrome
+nemôže sám spúšťať programy na počítači. Skript spustí VLC a prijíma iba adresy `https://*.livebox.sk`
+(prísny zoznam povolených znakov).
 
 Súbor `key.pem` a pole `"key"` v `manifest.json` slúžia len na to, aby mal rozšírenie stále rovnaké ID
 (`extension-id.txt`). Vďaka tomu môže registrácia pomocníka povoliť presne toto rozšírenie.
+
+Rozšírenie obsahuje knižnicu [hls.js](https://github.com/video-dev/hls.js) (licencia Apache-2.0, súbory
+`extension/vendor/`).
 
 ## Požiadavky
 
@@ -27,7 +38,7 @@ Nič iné netreba. Pomocník používa len nástroje, ktoré sú súčasťou mac
 
 ## Inštalácia
 
-Inštalácia má dva kroky, oba je potrebné urobiť. Rozšírenie samotné bez pomocníka nič neotvorí.
+Ak chcete iba vlastný prehrávač, stačí **krok 2**. Krok 1 (pomocník) je potrebný len pre tlačidlo **Open in VLC**.
 
 ### Krok 1: Zaregistrujte pomocníka (stačí raz)
 
@@ -61,6 +72,7 @@ Ak je iné, pomocník odmietne spojenie.
 2. Ak bola stránka otvorená už predtým, obnovte ju (F5).
 3. V hlavičke vedľa červeného **Live** uvidíte oranžové tlačidlo **▶ Open in VLC**. Kliknite naň.
 4. Spustí sa VLC a začne prehrávať video.
+5. Video na stránke by sa malo prehrať aj v novom prehrávači (po kliknutí na play), bez reklám.
 
 ## Aktualizácia
 

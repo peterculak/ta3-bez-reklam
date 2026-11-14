@@ -4,8 +4,8 @@ Nástroje na pozeranie a sťahovanie relácií TA3 a ďalších slovenských arc
 
 ## 🧡 Rozšírenie pre Chrome: TA3 bez reklám – Open in VLC
 
-Oranžové tlačidlo **▶ Open in VLC** vedľa tlačidla *Live* na stránkach TA3. Jedným kliknutím sa relácia otvorí
-vo VLC, bez reklám a bez webového prehrávača. Funguje aj vtedy, keď sa video na stránke len točí.
+Vlastný prehrávač pre archív TA3, bez reklám, a oranžové tlačidlo **▶ Open in VLC** vedľa tlačidla *Live*
+(otvorí reláciu vo VLC). Funguje aj vtedy, keď sa pôvodné video na stránke len točí.
 
 ➡️ **[Návod na inštaláciu a použitie](ta3-vlc-extension/README.md)** (priečinok [`ta3-vlc-extension/`](ta3-vlc-extension))
 

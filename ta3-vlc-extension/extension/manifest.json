@@ -8,6 +8,6 @@
   "host_permissions": ["https://embed.livebox.cz/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
-    { "matches": ["https://www.ta3.com/*", "https://ta3.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+    { "matches": ["https://www.ta3.com/*", "https://ta3.com/*"], "js": ["vendor/hls.min.js", "content.js"], "run_at": "document_idle" }
   ]
 }

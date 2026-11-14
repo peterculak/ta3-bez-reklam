@@ -14,6 +14,12 @@ async function buildStreamUrl(videoId) {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type === 'get-stream-url') {
+    buildStreamUrl(msg.videoId)
+      .then((url) => sendResponse({ ok: true, url }))
+      .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true;
+  }
   if (msg.type !== 'open-vlc') return;
   (async () => {
     try {
