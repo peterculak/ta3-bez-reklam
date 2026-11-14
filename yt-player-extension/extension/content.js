@@ -141,13 +141,21 @@
       });
 
       // ---- ask the helper for the streams ----
-      chrome.runtime.sendMessage({ type: 'stream', id }, (r) => {
+      // yt-dlp occasionally fails transiently (network, YouTube hiccup), so try once more before giving up
+      const requestStreams = (attempt) => chrome.runtime.sendMessage({ type: 'stream', id }, (r) => {
         if (!alive()) return;
         if (chrome.runtime.lastError || !r || !r.ok) {
-          return fail((chrome.runtime.lastError && chrome.runtime.lastError.message) || (r && r.error) || 'neznáma chyba');
+          const why = (chrome.runtime.lastError && chrome.runtime.lastError.message) || (r && r.error) || 'neznáma chyba';
+          if (attempt < 2) {
+            console.warn('[YT own player] stream request failed, retrying:', why);
+            status.textContent = 'Skúšam znova…';
+            return setTimeout(() => { if (alive()) requestStreams(attempt + 1); }, 1000);
+          }
+          return fail(why);
         }
         attach(r.urls);
       });
+      requestStreams(1);
 
       function attach(urls) {
         status.remove();
