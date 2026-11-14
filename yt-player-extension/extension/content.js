@@ -40,9 +40,9 @@
     const token = ++seq;
     const ac = new AbortController();
     const on = (t, ev, fn, opts) => t.addEventListener(ev, fn, Object.assign({ signal: ac.signal }, opts));
-    let wrap = null, original = null, restoreOriginal = () => {}, retry = null;
+    let wrap = null, original = null, restoreOriginal = () => {}, retry = null, stall = null;
 
-    const entry = { id, token, teardown: () => { clearTimeout(retry); ac.abort(); restoreOriginal(); if (wrap) { wrap.querySelectorAll('video').forEach(stop); wrap.remove(); } if (audio) stop(audio); } };
+    const entry = { id, token, teardown: () => { clearTimeout(retry); clearTimeout(stall); ac.abort(); restoreOriginal(); if (wrap) { wrap.querySelectorAll('video').forEach(stop); wrap.remove(); } if (audio) stop(audio); } };
     current = entry;
     const alive = () => current === entry;
     let audio = null;
@@ -160,6 +160,13 @@
       function attach(urls) {
         status.remove();
         video.src = urls[0];
+        // watchdog: a stream that neither errors nor delivers data (seen on first loads) gets one fresh retry
+        stall = setTimeout(() => {
+          if (!alive() || video.readyState >= 1) return;
+          console.warn('[YT own player] no video data after 10 s (networkState ' + video.networkState + ')');
+          if (!fresh) { entry.teardown(); start(id, true); } else fail('video sa nenačítalo (časový limit)');
+        }, 10000);
+        on(video, 'loadedmetadata', () => clearTimeout(stall));
         const split = urls.length > 1; // separate audio stream
         if (split) { audio = new Audio(); audio.preload = 'auto'; audio.src = urls[1]; video.muted = true; }
         const sound = () => (split ? audio : video); // the element that carries the sound
