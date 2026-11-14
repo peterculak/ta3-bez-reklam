@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube – vlastný prehrávač",
+  "version": "0.1.0",
+  "description": "Nahradí prehrávač YouTube vlastným (cez yt-dlp, bez reklám) a pridá tlačidlo Open in VLC.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxBCWQnGOCdcdHeAVn9Tdyko7xrJLLQJkcw0vHBRpzgm/yGl1WfuaqfxyRyFIb+gPVcdUTDb/gd5tYtRF6OIfPCGBj+RuX5M+t3Difz9sl744DPgrARAsiy7ubfR7FUcabBgWOf+7VgInNAIn98W4sj5PLbQBYgy5IKu7QWB11sfU79Ui3vfC2X0KoFJwFvlkcTQRCM+xmlBPz6+VFKKxMG0QW8r78S+pwDnl+Wo8KTJ3u0CGrfhgCY2IU6OK4mzq4FeFFsuXbtABbuEg4uGozPmXPi3XShiaNvvSc+diquHirA9M0xQ9B8+cjd/oJbPDjVshi9BpmJ+9uROPtPMn4wIDAQAB",
+  "permissions": ["nativeMessaging", "storage"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    { "matches": ["https://www.youtube.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ]
+}
