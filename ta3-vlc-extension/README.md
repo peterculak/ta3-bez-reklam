@@ -9,24 +9,38 @@ Rozšírenie robí na stránkach s archívnym videom (`ta3.com/relacie/...`) dve
    kedykoľvek naň môžete prepnúť odkazom **Pôvodný prehrávač TA3** v rohu videa.
 2. **Tlačidlo ▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke. Jedným kliknutím sa relácia otvorí vo VLC.
 
-Prehrávanie priamych prenosov (Live) zatiaľ nie je podporované. Titulky a výber kvality vo vlastnom prehrávači
-zatiaľ nie sú.
+Prehrávanie priamych prenosov (Live) zatiaľ nie je podporované. Výber kvality vo vlastnom prehrávači zatiaľ
+nie je. **Titulky nie sú podporované a ani sa neplánujú** (nie sú potrebné).
 
-Kľúčové slová: TA3 bez reklám, TA3 archív, Hlavné správy, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
+## JOJ play
+
+Rovnaký princíp funguje aj pre prehrávač na `play.joj.sk/player/...` (napr. Bez servítky):
+
+- JOJ používa prehrávač Tivio s prúdom **DASH** (`.mpd`), nie HLS, preto rozšírenie obsahuje aj knižnicu dash.js.
+- Adresa prúdu obsahuje token a pôvodný prehrávač ju získa až za behu. Rozšírenie preto zachytí adresu `.mpd`,
+  ktorú si stránka vyžiada, pôvodný prehrávač stlmí a pozastaví a ten istý prúd prehrá vo vlastnom prehrávači
+  (až 1080p, bez DRM).
+- V rohu videa je **▶ Open in VLC** a odkaz **Pôvodný prehrávač** na návrat k pôvodnému prehrávaču.
+- Chrome blokuje automatické spustenie so zvukom, video spustíte jedným kliknutím na play.
+- Pôvodný prehrávač sa načíta ako prvý (z neho pochádza token), takže chvíľu po otvorení stránky ešte môže
+  krátko hrať. Rozšírenie ho hneď po zachytení prúdu stíši.
+- Podporená je len stránka prehrávača `play.joj.sk/player/*`, nie ostatné stránky JOJ.
+
+Kľúčové slová: TA3 bez reklám, TA3 archív, Hlavné správy, JOJ play, Bez servítky, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
 
 ## Ako to funguje
 
 Vlastný prehrávač funguje priamo v prehliadači a nepotrebuje nič ďalšie. Na otvorenie vo VLC je potrebný malý
 pomocný skript v Bashi (`host/ta3_vlc_host.sh`), s ktorým rozšírenie komunikuje cez
 [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging), pretože Chrome
-nemôže sám spúšťať programy na počítači. Skript spustí VLC a prijíma iba adresy `https://*.livebox.sk`
+nemôže sám spúšťať programy na počítači. Skript spustí VLC a prijíma iba adresy `https://*.livebox.sk` a `https://*.joj.sk`
 (prísny zoznam povolených znakov).
 
 Súbor `key.pem` a pole `"key"` v `manifest.json` slúžia len na to, aby mal rozšírenie stále rovnaké ID
 (`extension-id.txt`). Vďaka tomu môže registrácia pomocníka povoliť presne toto rozšírenie.
 
-Rozšírenie obsahuje knižnicu [hls.js](https://github.com/video-dev/hls.js) (licencia Apache-2.0, súbory
-`extension/vendor/`).
+Rozšírenie obsahuje knižnice [hls.js](https://github.com/video-dev/hls.js) (licencia Apache-2.0) a
+[dash.js](https://github.com/Dash-Industry-Forum/dash.js) (licencia BSD-3-Clause), súbory v `extension/vendor/`.
 
 ## Požiadavky
 
@@ -85,6 +99,7 @@ a potom obnovte kartu s TA3. Skript `./install.sh` spúšťajte znova iba vtedy,
 |---|---|
 | Na stránke nie je tlačidlo | Obnovte kartu, skontrolujte, či je rozšírenie zapnuté a či stránka obsahuje video |
 | Tlačidlo sa zobrazí ako plávajúce okienko, nie vedľa *Live* | TA3 zmenila hlavičku stránky, ide o zámernú záložnú verziu |
+| Na JOJ sa objaví pôvodný prehrávač | Rozšírenie do cca 30 s nezachytilo adresu `.mpd` alebo dash.js zlyhal (chyba `[JOJ VLC]` v konzole), pôvodný prehrávač zostáva ako záloha |
 | Hlásenie `Specified native messaging host not found` | Spustite `./install.sh` a reštartujte Chrome |
 | Hlásenie `Access to the specified native messaging host is forbidden` | ID rozšírenia sa líši od `extension-id.txt`, nahrajte ho znova z tohto priečinka |
 | Hlásenie `Native host has exited` | Spustite znova `./install.sh` (presunuli ste priečinok?) a skontrolujte, či je VLC v `/Applications` |

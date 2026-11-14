@@ -68,7 +68,12 @@
     if (!original || !window.Hls) return;
     const wrap = document.createElement('div');
     wrap.id = 'ta3-own-player';
-    Object.assign(wrap.style, { position: 'relative', width: '100%', height: '100%', background: '#000' });
+    // match TA3's own sizing: fixed 16:9 up to 720px next to the side list, full width on narrow screens
+    const css = document.createElement('style');
+    css.textContent = '#ta3-own-player{position:relative;background:#000;aspect-ratio:16/9;width:min(720px,calc(100vw - 360px));min-width:0}' +
+      '#ta3-own-player>video{position:absolute;inset:0;display:block}' +
+      '@media (max-width:1024px){#ta3-own-player{width:100%}}';
+    wrap.appendChild(css);
     const video = document.createElement('video');
     video.controls = true;
     video.playsInline = true;

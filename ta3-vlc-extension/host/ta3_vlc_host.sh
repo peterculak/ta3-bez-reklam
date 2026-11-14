@@ -13,8 +13,8 @@ len=$(dd bs=1 count=4 2>/dev/null | od -An -tu4 | tr -d ' ')
 [[ "$len" =~ ^[0-9]+$ ]] && (( len > 0 && len < 4096 )) || { reply '{"ok":false,"error":"bad length"}'; exit 0; }
 msg=$(dd bs=1 count="$len" 2>/dev/null)
 
-# Strict allow-list: https URL on *.livebox.sk with URL-safe characters only
-pattern='"url"[[:space:]]*:[[:space:]]*"(https://[A-Za-z0-9.-]+\.livebox\.sk/[A-Za-z0-9._/:%?=&|~+,@-]*)"'
+# Strict allow-list: https URL on *.livebox.sk or *.joj.sk with URL-safe characters only
+pattern='"url"[[:space:]]*:[[:space:]]*"(https://[A-Za-z0-9.-]+\.(livebox|joj)\.sk/[A-Za-z0-9._/:%?=&|~+,@-]*)"'
 if [[ "$msg" =~ $pattern ]]; then
   if "$OPEN" -a VLC "${BASH_REMATCH[1]}" >/dev/null 2>&1; then
     reply '{"ok":true}'
@@ -22,5 +22,5 @@ if [[ "$msg" =~ $pattern ]]; then
     reply '{"ok":false,"error":"could not launch VLC"}'
   fi
 else
-  reply '{"ok":false,"error":"refused: not a livebox.sk URL"}'
+  reply '{"ok":false,"error":"refused: not a livebox.sk or joj.sk URL"}'
 fi

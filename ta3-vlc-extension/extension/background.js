@@ -20,6 +20,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
   }
+  if (msg.type === 'open-vlc-url') {
+    (async () => {
+      try {
+        // only accept stream URLs on hosts we know; the native host re-validates
+        if (!/^https:\/\/[A-Za-z0-9.-]+\.joj\.sk\//.test(msg.url || '')) throw new Error('refused: not a joj.sk URL');
+        const reply = await chrome.runtime.sendNativeMessage(HOST, { url: msg.url });
+        sendResponse(reply && reply.ok ? { ok: true } : { ok: false, error: (reply && reply.error) || 'no reply' });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e.message || e) });
+      }
+    })();
+    return true;
+  }
   if (msg.type !== 'open-vlc') return;
   (async () => {
     try {
