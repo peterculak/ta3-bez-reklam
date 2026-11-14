@@ -9,6 +9,6 @@
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     { "matches": ["https://www.ta3.com/*", "https://ta3.com/*"], "js": ["vendor/hls.min.js", "content.js"], "run_at": "document_idle" },
-    { "matches": ["https://play.joj.sk/player/*"], "js": ["vendor/dash.all.min.js", "joj.js"], "run_at": "document_start", "all_frames": true }
+    { "matches": ["https://play.joj.sk/player/*", "https://media.joj.sk/embed/*"], "js": ["vendor/dash.all.min.js", "vendor/hls.min.js", "joj.js"], "run_at": "document_start", "all_frames": true }
   ]
 }

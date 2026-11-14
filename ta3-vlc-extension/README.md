@@ -14,17 +14,21 @@ nie je. **Titulky nie sú podporované a ani sa neplánujú** (nie sú potrebné
 
 ## JOJ play
 
-Rovnaký princíp funguje aj pre prehrávač na `play.joj.sk/player/...` (napr. Bez servítky):
+Rovnaký princíp funguje aj pre JOJ (napr. Bez servítky). JOJ používa dva rôzne prehrávače a rozšírenie
+zvláda oba:
 
-- JOJ používa prehrávač Tivio s prúdom **DASH** (`.mpd`), nie HLS, preto rozšírenie obsahuje aj knižnicu dash.js.
-- Adresa prúdu obsahuje token a pôvodný prehrávač ju získa až za behu. Rozšírenie preto zachytí adresu `.mpd`,
-  ktorú si stránka vyžiada, pôvodný prehrávač stlmí a pozastaví a ten istý prúd prehrá vo vlastnom prehrávači
-  (až 1080p, bez DRM).
+- **`play.joj.sk/player/...`**: prehrávač Tivio s prúdom **DASH** (`.mpd`), preto rozšírenie obsahuje aj
+  knižnicu dash.js. Adresa prúdu obsahuje token a pôvodný prehrávač ju získa až za behu.
+- **`www.joj.sk/relacia/.../epizoda/...`**: prehrávač vložený cez `media.joj.sk/embed/...` s bežným **HLS**
+  (`master.m3u8`), ktorý sa prehráva cez hls.js.
+- V oboch prípadoch rozšírenie zachytí adresu prúdu, ktorú si stránka vyžiada, pôvodný prehrávač stlmí
+  a pozastaví a ten istý prúd prehrá vo vlastnom prehrávači (až 1080p, bez DRM).
 - V rohu videa je **▶ Open in VLC** a odkaz **Pôvodný prehrávač** na návrat k pôvodnému prehrávaču.
 - Chrome blokuje automatické spustenie so zvukom, video spustíte jedným kliknutím na play.
 - Pôvodný prehrávač sa načíta ako prvý (z neho pochádza token), takže chvíľu po otvorení stránky ešte môže
   krátko hrať. Rozšírenie ho hneď po zachytení prúdu stíši.
-- Podporená je len stránka prehrávača `play.joj.sk/player/*`, nie ostatné stránky JOJ.
+- Podporené sú len prehrávače `play.joj.sk/player/*` a `media.joj.sk/embed/*` (vrátane vložených na `www.joj.sk`),
+  nie ostatné časti JOJ (napr. živé vysielanie).
 
 Kľúčové slová: TA3 bez reklám, TA3 archív, Hlavné správy, JOJ play, Bez servítky, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
 
