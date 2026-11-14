@@ -105,6 +105,9 @@
 
     if (isDash) {
       player = dashjs.MediaPlayer().create();
+      // no subtitle support: don't enable the manifest's TTML track (it can't render without a TTML div and spams errors)
+      player.updateSettings({ streaming: { text: { defaultEnabled: false } } });
+      player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => player.enableText(false));
       player.on(dashjs.MediaPlayer.events.ERROR, (e) => { console.error('[JOJ VLC] dash error', e && e.error); restore(); });
       player.initialize(video, streamUrl, true);
     } else if (Hls.isSupported()) {
