@@ -97,9 +97,52 @@ class DownloadManager(private val context: Context) {
             val type = object : TypeToken<List<DownloadedFile>>() {}.type
             return gson.fromJson<List<DownloadedFile>>(registryFile.readText(), type)
                 ?.filter { File(it.localPath).exists() }  // auto-prune stale entries
+                ?.sortedBy { it.episodeUrl.startsWith("file://") }  // real URL wins over a recovered stand-in
+                ?.distinctBy { it.localPath }
+                ?.sortedByDescending { it.downloadedAt }
                 ?: emptyList()
         } catch (e: Exception) {
             return emptyList()
+        }
+    }
+
+    /**
+     * The registry lives in the app's private storage, so it is lost when the app is uninstalled, while the
+     * audio files in Download/ survive. Re-register every audio file under <Download>/{TA3,STVR,Tyzden,YouTube}/<show>/
+     * that the registry doesn't know about. The original episode URL isn't recoverable, so a file:// URL stands in.
+     * Returns how many files were added.
+     */
+    suspend fun recoverUntrackedFiles(): Int = withContext(Dispatchers.IO) {
+        registryMutex.withLock {
+            val base = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val registry = loadRegistryInternal().toMutableList()
+            val known = registry.map { it.localPath }.toHashSet()
+            val dateRegex = Regex("""\d{4}-\d{2}-\d{2}""")
+            val fmt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            var added = 0
+            for (root in listOf("TA3", "STVR", "Tyzden", "YouTube")) {
+                for (showDir in File(base, root).listFiles { f -> f.isDirectory }.orEmpty()) {
+                    for (f in showDir.listFiles { f -> f.isFile }.orEmpty()) {
+                        if (f.extension.lowercase() !in setOf("m4a", "mp3", "mp4")) continue
+                        if (f.absolutePath in known) continue
+                        registry.add(DownloadedFile(
+                            episodeUrl = "file://" + f.absolutePath,
+                            title = f.nameWithoutExtension.replace('_', ' ').trim(),
+                            date = dateRegex.find(f.name)?.value ?: fmt.format(java.util.Date(f.lastModified())),
+                            showName = showDir.name,
+                            localPath = f.absolutePath,
+                            fileSizeBytes = f.length(),
+                            downloadedAt = f.lastModified()
+                        ))
+                        added++
+                    }
+                }
+            }
+            if (added > 0) {
+                saveRegistryInternal(registry.sortedByDescending { it.downloadedAt })
+                Log.i("DownloadManager", "Recovered $added untracked files from disk")
+            }
+            added
         }
     }
 
@@ -111,6 +154,23 @@ class DownloadManager(private val context: Context) {
 
     private fun saveRegistryInternal(list: List<DownloadedFile>) {
         registryFile.writeText(gson.toJson(list))
+    }
+
+    /** File-name form of a title, shared by every downloader so a file can be matched back to its episode. */
+    private fun safeFileTitle(title: String) = title
+        .replace(Regex("[^a-zA-Z0-9áäčďéíľĺňóôŕšťúýžÁÄČĎÉÍĽĹŇÓÔŔŠŤÚÝŽ ._-]"), "")
+        .trim().replace(" ", "_").take(80)
+
+    /**
+     * True if the episode is registered by URL, or a file with its name already exists for the show
+     * (covers files recovered from disk after a reinstall, whose original URL is unknown).
+     */
+    suspend fun isDownloaded(episode: Episode): Boolean {
+        val want = safeFileTitle(episode.title)
+        return loadRegistry().any {
+            it.episodeUrl == episode.url ||
+                (it.showName == episode.showName && File(it.localPath).nameWithoutExtension == want)
+        }
     }
 
     suspend fun isDownloaded(episodeUrl: String): Boolean {
@@ -130,16 +190,15 @@ class DownloadManager(private val context: Context) {
 
     suspend fun cleanupOldDownloads(days: Int): Int = withContext(Dispatchers.IO) {
         val cutoffMs = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L)
+        val keepYoutube = AppSettings(context).keepYoutubeDownloads
         registryMutex.withLock {
             val registry = loadRegistryInternal().toMutableList()
             val toRemove = registry.filter { entry ->
-                // Never auto-delete YouTube channel downloads.
-                // These channels publish infrequently (every few weeks); auto-deleting after
-                // 7 days would wipe the only available episode, and then the app could
-                // re-download it on the next run creating a delete-redownload loop.
+                // YouTube: kept entirely if the user chose so; otherwise purged like everything else, except
+                // episodes known to have been downloaded by hand. Purged URLs are tombstoned, so the
+                // auto-downloader won't fetch them again.
                 if (CustomChannelManager.getAllYouTubeChannels().any { it.name == entry.showName }) {
-                    Log.d(TAG, "Auto-delete: skipping YouTube episode '${entry.title}' (keep YouTube downloads)")
-                    return@filter false
+                    if (keepYoutube || entry.source == "manual") return@filter false
                 }
                 val file = File(entry.localPath)
                 if (!file.exists()) return@filter true // Cleanup orphaned registry entries
@@ -543,6 +602,7 @@ class DownloadManager(private val context: Context) {
      */
     suspend fun downloadYouTubeAudio(
         episode: Episode,
+        source: String? = null,
         onProgress: (Float) -> Unit
     ): DownloadedFile = withContext(Dispatchers.IO) {
         onProgress(0f)
@@ -633,7 +693,8 @@ class DownloadManager(private val context: Context) {
             date = episode.date,
             showName = episode.showName,
             localPath = outFile.absolutePath,
-            fileSizeBytes = outFile.length()
+            fileSizeBytes = outFile.length(),
+            source = source
         )
         registryMutex.withLock {
             val registry = loadRegistryInternal().filter { it.episodeUrl != episode.url }.toMutableList()

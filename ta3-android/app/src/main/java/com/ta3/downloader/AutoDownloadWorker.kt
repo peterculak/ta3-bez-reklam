@@ -162,7 +162,7 @@ class AutoDownloadWorker(
 
                         for (episode in recent) {
                             // Skip if already downloaded, currently pending retry, or previously auto-deleted
-                            if (downloadManager.isDownloaded(episode.url) || pendingUrls.contains(episode.url)) {
+                            if (downloadManager.isDownloaded(episode) || pendingUrls.contains(episode.url)) {
                                 AppLogger.d(TAG, "Already downloaded or pending retry: ${episode.title}")
                                 continue
                             }
@@ -233,7 +233,7 @@ class AutoDownloadWorker(
 
                     for (episode in recent) {
                         // Skip if already downloaded or currently retrying
-                        if (downloadManager.isDownloaded(episode.url) || pendingUrls.contains(episode.url)) {
+                        if (downloadManager.isDownloaded(episode) || pendingUrls.contains(episode.url)) {
                             AppLogger.d(TAG, "Already downloaded or pending retry: ${episode.title}")
                             continue
                         }
@@ -288,7 +288,7 @@ class AutoDownloadWorker(
 
                     for (episode in recent) {
                         // Skip if already downloaded or currently retrying
-                        if (downloadManager.isDownloaded(episode.url) || pendingUrls.contains(episode.url)) {
+                        if (downloadManager.isDownloaded(episode) || pendingUrls.contains(episode.url)) {
                             AppLogger.d(TAG, "Already downloaded or pending retry: ${episode.title}")
                             continue
                         }
@@ -353,7 +353,7 @@ class AutoDownloadWorker(
                         }
 
                     for (episode in recent) {
-                        if (downloadManager.isDownloaded(episode.url) || pendingUrls.contains(episode.url)) {
+                        if (downloadManager.isDownloaded(episode) || pendingUrls.contains(episode.url)) {
                             AppLogger.d(TAG, "Already downloaded or pending retry: ${episode.title}")
                             continue
                         }
@@ -368,7 +368,7 @@ class AutoDownloadWorker(
                                 downloadManager.markPending(episode)
                                 DownloadStateTracker.addDownload(episode.url, episode.title, channel.displayName)
 
-                                downloadManager.downloadYouTubeAudio(episode) { progress ->
+                                downloadManager.downloadYouTubeAudio(episode, source = "auto") { progress ->
                                     DownloadStateTracker.updateProgress(episode.url, progress, DownloadStatus.DOWNLOADING)
                                 }
 

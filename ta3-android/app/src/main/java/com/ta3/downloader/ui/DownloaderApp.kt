@@ -207,6 +207,7 @@ fun DownloaderApp(viewModel: MainViewModel) {
                 onAutoDownloadToggle = { viewModel.setAutoDownloadEnabled(it) },
                 onAutoDeleteToggle = { viewModel.setAutoDeleteEnabled(it) },
                 onAutoDeleteDaysChange = { viewModel.setAutoDeleteDays(it) },
+                onKeepYouTubeToggle = { viewModel.setKeepYoutubeDownloads(it) },
                 onMinVideoDurationChange = { show, minutes -> viewModel.setShowMinDuration(show, minutes) },
                 onManualCleanup = {
                     scope.launch {
@@ -1176,6 +1177,8 @@ fun DownloadedFileCard(
         else -> file.showName
     }
 
+    val isYouTube = remember(file.showName) { com.ta3.downloader.CustomChannelManager.getAllYouTubeChannels().any { it.name == file.showName } }
+
     if (showConfirm) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
@@ -1211,6 +1214,9 @@ fun DownloadedFileCard(
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(channelInfo, color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                if (isYouTube && file.source == "manual") {
+                    Text("✋ Ručne", color = MaterialTheme.colorScheme.tertiary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
                 Text(formatFileSize(file.fileSizeBytes), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
             Spacer(Modifier.height(12.dp))

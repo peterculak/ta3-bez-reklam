@@ -41,6 +41,7 @@ fun SettingsTab(
     onAutoDownloadToggle: (Boolean) -> Unit,
     onAutoDeleteToggle: (Boolean) -> Unit,
     onAutoDeleteDaysChange: (Int) -> Unit,
+    onKeepYouTubeToggle: (Boolean) -> Unit,
     onMinVideoDurationChange: (String, Int) -> Unit,
     onManualCleanup: () -> Unit,
     onWifiOnlyToggle: (Boolean) -> Unit,
@@ -183,6 +184,7 @@ fun SettingsTab(
                                 onIntervalChange = onIntervalChange,
                                 onAutoDeleteToggle = onAutoDeleteToggle,
                                 onAutoDeleteDaysChange = onAutoDeleteDaysChange,
+                                onKeepYouTubeToggle = onKeepYouTubeToggle,
                                 onManualCleanup = onManualCleanup,
                                 onCustomChannelUrlChange = onCustomChannelUrlChange,
                                 onCustomChannelNameChange = onCustomChannelNameChange,
@@ -239,6 +241,7 @@ fun SettingsTab(
                                 onIntervalChange = onIntervalChange,
                                 onAutoDeleteToggle = onAutoDeleteToggle,
                                 onAutoDeleteDaysChange = onAutoDeleteDaysChange,
+                                onKeepYouTubeToggle = onKeepYouTubeToggle,
                                 onManualCleanup = onManualCleanup,
                                 onCustomChannelUrlChange = onCustomChannelUrlChange,
                                 onCustomChannelNameChange = onCustomChannelNameChange,
@@ -491,6 +494,7 @@ fun RenderStaticSection(
     onIntervalChange: (Int) -> Unit,
     onAutoDeleteToggle: (Boolean) -> Unit,
     onAutoDeleteDaysChange: (Int) -> Unit,
+    onKeepYouTubeToggle: (Boolean) -> Unit,
     onManualCleanup: () -> Unit,
     onCustomChannelUrlChange: (String) -> Unit,
     onCustomChannelNameChange: (String) -> Unit,
@@ -568,6 +572,14 @@ fun RenderStaticSection(
                                         label = { Text("$days dní", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
                                     )
                                 }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Ponechať YouTube stiahnutia", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text("Vypnuté: maže sa všetko staršie okrem epizód stiahnutých ručne (označené ✋).", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                                }
+                                Switch(checked = state.keepYoutubeDownloads, onCheckedChange = onKeepYouTubeToggle)
                             }
                             Spacer(Modifier.height(12.dp))
                             OutlinedButton(onClick = onManualCleanup, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {

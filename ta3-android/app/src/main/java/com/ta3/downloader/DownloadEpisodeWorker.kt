@@ -56,7 +56,7 @@ class DownloadEpisodeWorker(
                     }
                 } else {
                     // YouTube audio download via NewPipeExtractor + FFmpeg
-                    downloadManager.downloadYouTubeAudio(episode) { progress ->
+                    downloadManager.downloadYouTubeAudio(episode, source = "manual") { progress ->
                         DownloadStateTracker.updateProgress(episodeUrl, progress, DownloadStatus.DOWNLOADING)
                         setProgressBlocking(workDataOf(KEY_PROGRESS to progress, KEY_STATUS to "downloading"))
                     }
