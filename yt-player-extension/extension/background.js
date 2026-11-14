@@ -13,8 +13,9 @@ async function cached(id) {
   return null;
 }
 
-async function getStreams(id) {
-  const hit = await cached(id);
+async function getStreams(id, fresh) {
+  if (fresh) { try { await chrome.storage.session.remove('stream:' + id); } catch (_) {} } // the cached URLs were rejected
+  const hit = fresh ? null : await cached(id);
   if (hit) return hit;
   if (inflight.has(id)) return inflight.get(id);
   const p = chrome.runtime.sendNativeMessage(HOST, { action: 'stream', id })
@@ -33,7 +34,7 @@ async function getStreams(id) {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (!msg || (msg.type !== 'stream' && msg.type !== 'vlc') || !/^[A-Za-z0-9_-]{11}$/.test(msg.id || '')) return;
   const run = msg.type === 'stream'
-    ? getStreams(msg.id)
+    ? getStreams(msg.id, !!msg.fresh)
     : chrome.runtime.sendNativeMessage(HOST, { action: 'vlc', id: msg.id })
         .then((reply) => (reply && reply.ok ? reply : { ok: false, error: (reply && reply.error) || 'no reply' }))
         .catch((e) => ({ ok: false, error: String((e && e.message) || e) }));

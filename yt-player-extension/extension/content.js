@@ -36,7 +36,7 @@
   setInterval(check, 1000); // safety net for navigations we don't get an event for
   check();
 
-  function start(id) {
+  function start(id, fresh) {
     const token = ++seq;
     const ac = new AbortController();
     const on = (t, ev, fn, opts) => t.addEventListener(ev, fn, Object.assign({ signal: ac.signal }, opts));
@@ -142,7 +142,7 @@
 
       // ---- ask the helper for the streams ----
       // yt-dlp occasionally fails transiently (network, YouTube hiccup), so try once more before giving up
-      const requestStreams = (attempt) => chrome.runtime.sendMessage({ type: 'stream', id }, (r) => {
+      const requestStreams = (attempt) => chrome.runtime.sendMessage({ type: 'stream', id, fresh: !!fresh }, (r) => {
         if (!alive()) return;
         if (chrome.runtime.lastError || !r || !r.ok) {
           const why = (chrome.runtime.lastError && chrome.runtime.lastError.message) || (r && r.error) || 'neznáma chyba';
@@ -187,8 +187,23 @@
           on(audio, 'waiting', () => { if (want) video.pause(); });
           on(audio, 'playing', () => { if (want && video.paused) video.play().catch(() => {}); });
         }
-        on(video, 'error', () => fail('prehrávanie zlyhalo (video)'));
-        if (split) on(audio, 'error', () => fail('prehrávanie zlyhalo (zvuk)'));
+        // A media error usually means a stale/rejected stream URL (cached too long, or IP changed):
+        // log what we can, then restart once with a fresh URL that bypasses the cache.
+        const onMediaError = (el, which) => {
+          const e = el.error;
+          console.warn('[YT own player] media error', which, e && e.code, e && e.message);
+          fetch(el.src, { headers: { Range: 'bytes=0-1' } })
+            .then((r) => console.warn('[YT own player] probe status for', which, r.status))
+            .catch((x) => console.warn('[YT own player] probe failed for', which, String(x)));
+          if (!fresh && alive()) {
+            entry.teardown();
+            start(id, true);
+          } else {
+            fail('prehrávanie zlyhalo (' + (which === 'video' ? 'video' : 'zvuk') + ')');
+          }
+        };
+        on(video, 'error', () => onMediaError(video, 'video'));
+        if (split) on(audio, 'error', () => onMediaError(audio, 'audio'));
 
         on(seek, 'input', () => seekTo(parseFloat(seek.value)));
         on(playBtn, 'click', toggle);
