@@ -169,7 +169,7 @@
         on(video, 'waiting', () => { if (split) audio.pause(); });
         on(video, 'playing', () => { if (split && want) audio.play().catch(() => {}); });
         on(video, 'ratechange', () => { if (split) audio.playbackRate = video.playbackRate; });
-        on(video, 'durationchange', () => { seek.max = video.duration || 0; });
+        on(video, 'durationchange', () => { seek.max = video.duration || 0; time.textContent = fmt(video.currentTime) + ' / ' + fmt(video.duration); });
         on(video, 'timeupdate', () => {
           if (!seek.matches(':active')) seek.value = video.currentTime;
           time.textContent = fmt(video.currentTime) + ' / ' + fmt(video.duration);

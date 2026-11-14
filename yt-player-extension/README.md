@@ -11,8 +11,9 @@ Je to osobný nástroj. Nie je v Chrome Web Store a používanie môže byť v r
 
 - macOS
 - Google Chrome
-- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (`brew install yt-dlp`) a pravidelne ho aktualizujte (`brew upgrade yt-dlp`),
-  YouTube sa často mení
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) nainštalovaný cez Homebrew (`brew install yt-dlp`) a pravidelne
+  aktualizovaný (`brew upgrade yt-dlp`), YouTube sa často mení. **Samostatná binárka stiahnutá z GitHubu
+  (`yt-dlp_macos`) nefunguje**: keď ju spustí Chrome, macOS zobrazí „Python.framework is damaged and can't be opened“.
 - [VLC](https://www.videolan.org/) v `/Applications` (len pre tlačidlo Open in VLC)
 
 ## Inštalácia
@@ -48,6 +49,8 @@ Medzerník alebo `k` prehrá/pozastaví, šípky vľavo/vpravo posun o 5 s, `j`/
 | `Specified native messaging host not found` | Spustite znova `./install.sh` a reštartujte Chrome |
 | `Access to the specified native messaging host is forbidden` | Nahrajte rozšírenie znova z priečinka `yt-player-extension/extension` |
 | `yt-dlp not found` | `brew install yt-dlp` |
+| Okno „Python.framework is damaged and can't be opened“ | Používate samostatnú binárku `yt-dlp`. Nainštalujte `brew install yt-dlp` (pomocník uprednostní verziu z Homebrew) |
+| Video sa občas zasekne (najmä pri vysokej kvalite) | YouTube spomaľuje súvislé sťahovanie. Skúste chvíľu počkať, alebo dajte vedieť |
 
 ## Odinštalovanie
 
