@@ -24,6 +24,16 @@ vývojárov a načítajte priečinok `ta3-vlc-extension/extension`. Celý postup
 | [`ta3-android/`](ta3-android) | Android aplikácia na sťahovanie a prehrávanie relácií |
 | [`samsung-tv/`](samsung-tv) | Súbory pre televízor Samsung |
 
+## Licencia
+
+Kód v tomto repozitári je pod licenciou [MIT](LICENSE). Knižnice v `ta3-vlc-extension/extension/vendor/`
+([hls.js](ta3-vlc-extension/extension/vendor/hls.LICENSE), Apache-2.0, a
+[dash.js](ta3-vlc-extension/extension/vendor/dash.LICENSE), BSD-3-Clause) a submoduly (napr. v `samsung-tv/`)
+si zachovávajú svoje vlastné licencie.
+
+Nie sme spojení s TA3 ani s TV JOJ. Videá a ich obsah patria ich vysielateľom, rozšírenie iba mení spôsob,
+akým sa už verejne dostupný prúd prehráva vo vašom prehliadači.
+
 ## Kľúčové slová
 
-TA3 bez reklám, TA3 archív, Hlavné správy, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
+TA3 bez reklám, TA3 archív, Hlavné správy, JOJ play, Bez servítky, stiahnuť TA3, TA3 VLC, rozšírenie Chrome.
