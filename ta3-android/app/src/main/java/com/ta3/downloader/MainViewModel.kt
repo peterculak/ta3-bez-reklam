@@ -41,6 +41,7 @@ data class UiState(
     val wifiOnlyDownload: Boolean = true,
     val autoDeleteEnabled: Boolean = true,
     val autoDeleteDays: Int = 7,
+    val keepYoutubeDownloads: Boolean = false,
     val showEnabledMap: Map<String, Boolean> = TA3_SHOWS.associate { it.name to true },
     val prehrajEmail: String = "",
     val prehrajPassword: String = "",
@@ -141,6 +142,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             wifiOnlyDownload = settings.wifiOnlyDownload,
             autoDeleteEnabled = settings.autoDeleteEnabled,
             autoDeleteDays = settings.autoDeleteDays,
+            keepYoutubeDownloads = settings.keepYoutubeDownloads,
             showEnabledMap = TA3_SHOWS.associate { it.name to settings.isShowEnabled(it.name) },
             stvrShowEnabledMap = STVR_SHOWS.associate { it.name to settings.isShowEnabled(it.name) },
             tyzdenShowEnabledMap = TYZDEN_SHOWS.associate { it.name to settings.isShowEnabled(it.name) },
@@ -263,8 +265,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val files = downloadManager.loadRegistry()
             _state.update { it.copy(downloadedFiles = files) }
+            if (!recoveryDone) {
+                recoveryDone = true
+                if (downloadManager.recoverUntrackedFiles() > 0) {
+                    _state.update { it.copy(downloadedFiles = downloadManager.loadRegistry()) }
+                }
+            }
         }
     }
+
+    private var recoveryDone = false
 
     private fun observeActiveDownloads() {
         viewModelScope.launch {
@@ -664,6 +674,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setAutoDeleteEnabled(enabled: Boolean) {
         settings.autoDeleteEnabled = enabled
         _state.update { it.copy(autoDeleteEnabled = enabled) }
+    }
+
+    fun setKeepYoutubeDownloads(keep: Boolean) {
+        settings.keepYoutubeDownloads = keep
+        _state.update { it.copy(keepYoutubeDownloads = keep) }
     }
 
     fun setAutoDeleteDays(days: Int) {

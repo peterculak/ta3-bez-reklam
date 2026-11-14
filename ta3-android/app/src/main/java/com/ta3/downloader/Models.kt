@@ -29,7 +29,9 @@ data class DownloadedFile(
     val showName: String,
     val localPath: String,
     val fileSizeBytes: Long,
-    val downloadedAt: Long = System.currentTimeMillis()
+    val downloadedAt: Long = System.currentTimeMillis(),
+    /** "manual" (tapped in the app), "auto" (background downloader) or null when unknown (older entries, recovered files). */
+    val source: String? = null
 )
 
 data class PendingDownload(
@@ -161,7 +163,11 @@ data class YouTubeChannel(
     val displayName: String,    // shown in UI, e.g. "Braňo Závodský"
     val channelId: String,      // YouTube channel ID starting with UC...
     val channelUrl: String,     // full YouTube channel URL
-    val tab: String = "streams" // which tab to scrape: "streams" or "videos"
+    val tab: String = "streams", // which page to scrape: "streams", "videos", or e.g. "search?query=Na+telo"
+    /** If set, only videos whose title contains this text (case-insensitive) are listed/downloaded. */
+    val titleFilter: String? = null,
+    /** Minimum episode length (minutes) used until the user changes it in Settings. */
+    val defaultMinDurationMinutes: Int = 0
 )
 
 val YOUTUBE_CHANNELS = listOf(
@@ -184,6 +190,30 @@ val YOUTUBE_CHANNELS = listOf(
         channelId = "UC28hsAjds3mQzScBtYtkGsQ",
         channelUrl = "https://www.youtube.com/@PortalMarker",
         tab = "videos"
+    ),
+    // "Na telo PLUS" is one series on Televízia Markíza's busy channel (dozens of uploads a day), so the plain
+    // "videos" tab would push it off the first page within days. The channel's own search lists the series
+    // going back months; the title filter then drops anything else the search returns (notably the separate
+    // Sunday "Na telo" duels, titled "A vs. B | Na telo"). Besides the full episodes (~36-46 min) the series
+    // has 1-minute teaser clips, hence the minimum duration.
+    YouTubeChannel(
+        name = "na-telo-plus",
+        displayName = "Na telo PLUS",
+        channelId = "",
+        channelUrl = "https://www.youtube.com/@TeleviziaMarkiza",
+        tab = "search?query=Na+telo+PLUS",
+        titleFilter = "Na telo PLUS",
+        defaultMinDurationMinutes = 15
+    ),
+    // "Sme v kaviarni" is a ~90-minute podcast on TV JOJ's channel (titled "24 podcast - Sme v kaviarni: ...").
+    // Same approach as above: the channel search reaches back months, the title filter keeps only this series.
+    YouTubeChannel(
+        name = "sme-v-kaviarni",
+        displayName = "Sme v kaviarni",
+        channelId = "",
+        channelUrl = "https://www.youtube.com/@TVJOJofficial",
+        tab = "search?query=Sme+v+kaviarni",
+        titleFilter = "Sme v kaviarni"
     )
 )
 

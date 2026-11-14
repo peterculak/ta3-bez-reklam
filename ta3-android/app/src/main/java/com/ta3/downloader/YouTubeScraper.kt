@@ -294,14 +294,19 @@ object YouTubeScraper {
             AppLogger.w(TAG, "ytInitialData not found on streams page — channel=${channel.name}")
         }
 
-        val todayCount = episodes.count { it.date == todayString() }
-        AppLogger.d(TAG, "fetchEpisodes done: channel=${channel.name} total=${episodes.size} matchToday=$todayCount today=${todayString()}")
-        if (todayCount == 0 && episodes.isNotEmpty()) {
-            val mostRecent = episodes.map { it.date }.filter { it != "1970-01-01" }.maxOrNull() ?: "none"
+        val matching = filterByTitle(episodes, channel.titleFilter)
+        val todayCount = matching.count { it.date == todayString() }
+        AppLogger.d(TAG, "fetchEpisodes done: channel=${channel.name} total=${episodes.size} afterTitleFilter=${matching.size} matchToday=$todayCount today=${todayString()}")
+        if (todayCount == 0 && matching.isNotEmpty()) {
+            val mostRecent = matching.map { it.date }.filter { it != "1970-01-01" }.maxOrNull() ?: "none"
             AppLogger.w(TAG, "  No episodes match today — most recent date is $mostRecent")
         }
-        episodes
+        matching
     }
+
+    /** Keep only episodes whose title contains [filter] (case-insensitive); no filter keeps everything. */
+    fun filterByTitle(episodes: List<Episode>, filter: String?): List<Episode> =
+        if (filter.isNullOrBlank()) episodes else episodes.filter { it.title.contains(filter, ignoreCase = true) }
 
     /**
      * Extract ytInitialData JSON from a YouTube channel page.

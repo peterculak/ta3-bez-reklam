@@ -27,8 +27,9 @@ class AppSettings(context: Context) {
     fun setShowEnabled(showName: String, enabled: Boolean) =
         prefs.edit { putBoolean("show_enabled_$showName", enabled) }
 
+    /** The user's choice, else the channel's built-in default (e.g. "Na telo" skips short clips), else 0. */
     fun getMinDurationMinutes(showName: String): Int =
-        prefs.getInt("min_duration_$showName", 0)
+        prefs.getInt("min_duration_$showName", YOUTUBE_CHANNELS.find { it.name == showName }?.defaultMinDurationMinutes ?: 0)
 
     fun setMinDurationMinutes(showName: String, minutes: Int) =
         prefs.edit { putInt("min_duration_$showName", minutes) }
@@ -105,6 +106,11 @@ class AppSettings(context: Context) {
     var autoDeleteDays: Int
         get() = prefs.getInt(KEY_AUTO_DELETE_DAYS, 7)
         set(v) = prefs.edit { putInt(KEY_AUTO_DELETE_DAYS, v) }
+
+    /** If true, auto-delete never touches YouTube downloads. Default: false (old auto-downloaded ones are purged). */
+    var keepYoutubeDownloads: Boolean
+        get() = prefs.getBoolean("keep_youtube_downloads", false)
+        set(v) = prefs.edit { putBoolean("keep_youtube_downloads", v) }
 
     // ─── Prehraj.to credentials ────────────────────────────────────────────────
 
