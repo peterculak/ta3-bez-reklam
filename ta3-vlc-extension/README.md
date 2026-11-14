@@ -9,6 +9,12 @@ Rozšírenie robí na stránkach s archívnym videom (`ta3.com/relacie/...`) dve
    kedykoľvek naň môžete prepnúť odkazom **Pôvodný prehrávač TA3** v rohu videa.
 2. **Tlačidlo ▶ Open in VLC** vedľa červeného tlačidla *Live* v hlavičke. Jedným kliknutím sa relácia otvorí vo VLC.
 
+![TA3: vlastný prehrávač a oranžové tlačidlo Open in VLC](../docs/screenshots/ta3.jpg)
+*TA3: vlastný prehrávač a oranžové tlačidlo **▶ Open in VLC** vedľa *Live*.*
+
+![JOJ: vlastný prehrávač, tlačidlá sa zobrazia pri prejdení myšou](../docs/screenshots/joj.jpg)
+*JOJ: vlastný prehrávač, tlačidlá **▶ Open in VLC** a **Pôvodný prehrávač** sa zobrazia pri prejdení myšou.*
+
 Prehrávanie priamych prenosov (Live) zatiaľ nie je podporované. Výber kvality vo vlastnom prehrávači zatiaľ
 nie je. **Titulky nie sú podporované a ani sa neplánujú** (nie sú potrebné).
 
@@ -56,7 +62,19 @@ Nič iné netreba. Pomocník používa len nástroje, ktoré sú súčasťou mac
 
 ## Inštalácia
 
-Ak chcete iba vlastný prehrávač, stačí **krok 2**. Krok 1 (pomocník) je potrebný len pre tlačidlo **Open in VLC**.
+Ak chcete iba vlastný prehrávač, stačí **krok 0 a krok 2**. Krok 1 (pomocník) je potrebný len pre tlačidlo **Open in VLC**.
+
+### Krok 0: Stiahnite projekt
+
+Rozšírenie sa nenačítava z Chrome Web Store, ale priamo z priečinka, preto si ho najprv stiahnite. Buď cez Git:
+
+```sh
+git clone https://github.com/peterculak/ta3-bez-reklam.git
+cd ta3-bez-reklam
+```
+
+alebo na stránke repozitára kliknite na zelené tlačidlo **Code → Download ZIP** a ZIP rozbaľte.
+Priečinok potom nepresúvajte ani nemažte, Chrome ho číta priamo odtiaľ (a pomocník pre VLC naň ukazuje).
 
 ### Krok 1: Zaregistrujte pomocníka (stačí raz)
 
