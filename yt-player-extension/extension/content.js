@@ -25,7 +25,27 @@
 
   const videoId = () => (location.pathname === '/watch' ? new URLSearchParams(location.search).get('v') : null);
 
+  // After the extension is reloaded/updated, this (orphaned) script keeps running in open tabs and every
+  // chrome.* call throws "Extension context invalidated". Detect that, and give the page its player back.
+  const ctxOk = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; } };
+  const safeSend = (msg, cb) => { // cb(reply, errorMessage)
+    try {
+      chrome.runtime.sendMessage(msg, (r) => {
+        let err = null;
+        try { err = chrome.runtime.lastError ? chrome.runtime.lastError.message : null; } catch (e) { err = String(e.message || e); }
+        cb(r, err);
+      });
+    } catch (e) { cb(null, String(e.message || e)); }
+  };
+
   function check() {
+    if (!ctxOk()) { // orphaned: restore the stock player and stop
+      clearInterval(poll);
+      window.removeEventListener('yt-navigate-finish', check);
+      window.removeEventListener('popstate', check);
+      if (current) { current.teardown(); current = null; }
+      return;
+    }
     const id = videoId();
     if (id === (current && current.id)) return;
     if (current) { current.teardown(); current = null; }
@@ -33,7 +53,7 @@
   }
   window.addEventListener('yt-navigate-finish', check);
   window.addEventListener('popstate', check);
-  setInterval(check, 1000); // safety net for navigations we don't get an event for
+  const poll = setInterval(check, 1000); // safety net for navigations we don't get an event for
   check();
 
   function start(id, fresh) {
@@ -132,8 +152,8 @@
       vlcBtn.addEventListener('click', (e) => {
         e.preventDefault();
         vlcBtn.textContent = 'Opening…';
-        chrome.runtime.sendMessage({ type: 'vlc', id }, (r) => {
-          const err = chrome.runtime.lastError ? chrome.runtime.lastError.message : (!r || !r.ok ? (r && r.error) || 'unknown' : null);
+        safeSend({ type: 'vlc', id }, (r, lastErr) => {
+          const err = lastErr || (!r || !r.ok ? (r && r.error) || 'unknown' : null);
           if (err) { console.error('[YT own player]', err); vlcBtn.title = err; }
           vlcBtn.textContent = err ? '✖ Failed' : '✔ Sent to VLC';
           setTimeout(() => { vlcBtn.textContent = '▶ Open in VLC'; }, 3000);
@@ -142,10 +162,10 @@
 
       // ---- ask the helper for the streams ----
       // yt-dlp occasionally fails transiently (network, YouTube hiccup), so try once more before giving up
-      const requestStreams = (attempt) => chrome.runtime.sendMessage({ type: 'stream', id, fresh: !!fresh }, (r) => {
+      const requestStreams = (attempt) => safeSend({ type: 'stream', id, fresh: !!fresh }, (r, lastErr) => {
         if (!alive()) return;
-        if (chrome.runtime.lastError || !r || !r.ok) {
-          const why = (chrome.runtime.lastError && chrome.runtime.lastError.message) || (r && r.error) || 'neznáma chyba';
+        if (lastErr || !r || !r.ok) {
+          const why = lastErr || (r && r.error) || 'neznáma chyba';
           if (attempt < 2) {
             console.warn('[YT own player] stream request failed, retrying:', why);
             status.textContent = 'Skúšam znova…';
