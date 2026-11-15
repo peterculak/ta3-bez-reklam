@@ -52,10 +52,11 @@ fun DownloaderApp(viewModel: MainViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // The Prehraj tab collapses the title + main tab bar when its content scrolls up
+    // The Prehraj and JOJ tabs collapse the title + main tab bar when their content scrolls up
     val headerCollapse = remember { HeaderCollapse() }
-    headerCollapse.enabled = state.selectedTab == Tab.PREHRAJ
-    LaunchedEffect(state.selectedTab) { if (state.selectedTab != Tab.PREHRAJ) headerCollapse.reset() }
+    val collapsesHeader = state.selectedTab == Tab.PREHRAJ || state.selectedTab == Tab.JOJ
+    headerCollapse.enabled = collapsesHeader
+    LaunchedEffect(state.selectedTab) { if (!collapsesHeader) headerCollapse.reset() }
 
     CompositionLocalProvider(LocalScroll provides viewModel.browseScroll, LocalHeaderCollapse provides headerCollapse) {
     Scaffold(

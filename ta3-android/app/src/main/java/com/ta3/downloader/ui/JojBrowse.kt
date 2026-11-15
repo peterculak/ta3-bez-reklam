@@ -44,6 +44,7 @@ private fun JojShowsGrid(state: UiState, viewModel: MainViewModel, modifier: Mod
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .revealHeaderOnDrag()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surface)
