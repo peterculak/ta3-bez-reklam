@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
         if (settings.autoDownloadEnabled) {
             AutoDownloadWorker.schedule(this, settings.syncIntervalHours)
         }
+        JojShowsRefreshWorker.schedule(this)
 
         // Only trigger auto-download check on a fresh cold-start from the launcher, 
         // not when rotating the screen or receiving a shared video from YouTube

@@ -19,7 +19,8 @@ data class Episode(
     val time: String = "",   // HH:MM extracted from article_date span, empty if not available
     val url: String,       // episode page URL
     val showName: String,
-    val durationSeconds: Int = 0
+    val durationSeconds: Int = 0,
+    val thumbnailUrl: String? = null
 )
 
 data class DownloadedFile(
@@ -61,6 +62,78 @@ data class ActiveDownload(
     val status: DownloadStatus,
     val errorMessage: String? = null
 )
+
+// ─── JOJ Archive Models ────────────────────────────────────────────────────────
+
+/**
+ * A show from the joj.sk archive (https://www.joj.sk/relacie), discovered by scraping —
+ * unlike [Show], there's no fixed list; see [JojScraper].
+ */
+data class JojShow(
+    /** The "<numericId>-<slug>" path segment from /relacie/<id>-<slug>, e.g. "101-nevinni". Doubles as Episode.showName. */
+    val id: String,
+    val title: String,
+    val url: String,
+    val posterUrl: String? = null
+)
+
+/** Hero image + short synopsis from a show's own joj.sk page, fetched lazily when it's opened. */
+data class JojShowDetail(
+    val backdropUrl: String? = null,
+    val description: String = ""
+)
+
+/** One season from a show's season selector, e.g. id="338" label="2. séria". See JojScraper.fetchSeasons. */
+data class JojSeason(val id: String, val label: String)
+
+/**
+ * On-disk cache of [JojShow.fetchShows]'s ~156-show, per-show-paywall-checked result, so the JOJ
+ * tab shows something instantly on cold start instead of re-scraping the whole archive every time.
+ * Kept in app-private storage (no permission, not user content) — just a performance cache.
+ */
+object JojShowCache {
+    private const val FILE_NAME = "joj_shows_cache.json"
+    /** How long a cached list is used without a refresh — see [JojShowsRefreshWorker] for the periodic background refresh. */
+    const val MAX_AGE_MS = 3 * 60 * 60 * 1000L
+    private val gson = Gson()
+
+    data class Cached(val shows: List<JojShow>, val savedAt: Long)
+
+    private fun file(context: android.content.Context) = File(context.filesDir, FILE_NAME)
+
+    fun load(context: android.content.Context): Cached? = try {
+        val f = file(context)
+        if (!f.exists()) {
+            null
+        } else {
+            val cached = gson.fromJson(f.readText(), Cached::class.java)
+            // Gson bypasses Kotlin's constructor null-checks on a malformed/older-shape JSON file
+            // (e.g. a missing "shows" key leaves it null despite the non-null type) — validate
+            // explicitly and self-heal by dropping the bad file, rather than crashing later when
+            // this flows into UiState.copy().
+            val shows: List<JojShow>? = cached?.shows
+            if (shows == null) {
+                f.delete()
+                null
+            } else {
+                cached
+            }
+        }
+    } catch (e: Exception) {
+        try { file(context).delete() } catch (_: Exception) { }
+        null
+    }
+
+    fun save(context: android.content.Context, shows: List<JojShow>) {
+        try {
+            file(context).writeText(gson.toJson(Cached(shows, System.currentTimeMillis())))
+        } catch (e: Exception) {
+            // best-effort; a failed write just means no instant load next time
+        }
+    }
+
+    fun isStale(cached: Cached): Boolean = System.currentTimeMillis() - cached.savedAt > MAX_AGE_MS
+}
 
 // ─── Prehraj.to Models ────────────────────────────────────────────────────────
 

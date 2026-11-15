@@ -71,6 +71,11 @@ class DownloadManager(private val context: Context) {
         return File(base, "Tyzden/$showName").also { it.mkdirs() }
     }
 
+    private fun jojDownloadDir(showName: String): File {
+        val base = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        return File(base, "JOJ/$showName").also { it.mkdirs() }
+    }
+
     private fun prehrajDownloadDir(): File {
         val base = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         return File(base, "Prehraj").also { it.mkdirs() }
@@ -380,22 +385,29 @@ class DownloadManager(private val context: Context) {
 
         val isStvr = STVR_SHOWS.any { it.name == episode.showName }
         val isTyzden = TYZDEN_SHOWS.any { it.name == episode.showName }
+        val isJoj = episode.url.contains("joj.sk")
 
         // 1. Resolve the m3u8 URL
         val m3u8Url = if (isStvr) {
             StvScraper.resolveM3u8(episode.url)
         } else if (isTyzden) {
             TyzdenScraper.resolveMp3Url(episode.url)
+        } else if (isJoj) {
+            JojScraper.resolvePlayableUrl(episode.url)
         } else {
             Scraper.resolveM3u8(episode.url)
         }
         onProgress(0.05f)
 
         // 2. Look up the display name for the show (e.g. "Tlačové besedy")
+        //    For JOJ, episode.showName already IS the display name (e.g. "Nevinní") — there's
+        //    no fixed show list to look it up in, see JojScraper/JojShow.
         val showDisplayName = (if (isStvr) {
             STVR_SHOWS.find { it.name == episode.showName }?.displayName
         } else if (isTyzden) {
             TYZDEN_SHOWS.find { it.name == episode.showName }?.displayName
+        } else if (isJoj) {
+            episode.showName
         } else {
             TA3_SHOWS.find { it.name == episode.showName }?.displayName
         }) ?: episode.showName
@@ -415,6 +427,8 @@ class DownloadManager(private val context: Context) {
             File(stvrDownloadDir(episode.showName), fileName)
         } else if (isTyzden) {
             File(tyzdenDownloadDir(episode.showName), fileName)
+        } else if (isJoj) {
+            File(jojDownloadDir(episode.showName), fileName)
         } else {
             File(showDownloadDir(episode.showName), fileName)
         }

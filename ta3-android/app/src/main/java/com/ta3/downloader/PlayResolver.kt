@@ -9,6 +9,7 @@ object PlayResolver {
             isYoutube -> YouTubeScraper.resolvePlayableUrl(episode.url)
             STVR_SHOWS.any { it.name == episode.showName } -> StvScraper.resolveM3u8(episode.url)
             TYZDEN_SHOWS.any { it.name == episode.showName } -> TyzdenScraper.resolveMp3Url(episode.url)
+            episode.url.contains("joj.sk") -> JojScraper.resolvePlayableUrl(episode.url)
             else -> Scraper.resolveM3u8(episode.url)
         }
     }

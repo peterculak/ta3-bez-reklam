@@ -35,6 +35,22 @@ data class UiState(
     val tyzdenEpisodeLoadError: String? = null,
     val tyzdenSearchQuery: String = "",
     val tyzdenShowEnabledMap: Map<String, Boolean> = TYZDEN_SHOWS.associate { it.name to true },
+    // JOJ archive — poster-tile browse of joj.sk/relacie; play/download only, no auto-download
+    val jojShows: List<JojShow> = emptyList(),
+    val jojShowsLoading: Boolean = false,
+    val jojShowsError: String? = null,
+    val jojSelectedShow: JojShow? = null,   // null = showing the shows grid, non-null = its full-screen detail page
+    val jojShowDetail: JojShowDetail? = null,
+    val jojEpisodes: List<Episode> = emptyList(),
+    val jojEpisodesPage: Int = 0,
+    val jojHasMoreEpisodes: Boolean = true,
+    val jojLoadingEpisodes: Boolean = false,
+    val jojEpisodeLoadError: String? = null,
+    val jojShowSearchQuery: String = "",
+    // Seasons, newest first (see JojScraper.fetchSeasons) — jojSeasonIndex is the one the user
+    // has picked via the season chips (defaults to the newest, index 0).
+    val jojSeasons: List<JojSeason> = emptyList(),
+    val jojSeasonIndex: Int = 0,
     // Settings
     val syncIntervalHours: Int = AppSettings.DEFAULT_INTERVAL_HOURS,
     val autoDownloadEnabled: Boolean = true,
@@ -98,7 +114,7 @@ data class UiState(
     val customChannelNameInput: String = "",
     val pendingSharedChannel: Pair<String, String>? = null,  // url to displayName
     // Ordering
-    val mainTabs: List<Tab> = listOf(Tab.EPISODES, Tab.STVR, Tab.TYZDEN, Tab.YOUTUBE, Tab.DOWNLOADS, Tab.PREHRAJ, Tab.SETTINGS),
+    val mainTabs: List<Tab> = listOf(Tab.EPISODES, Tab.STVR, Tab.TYZDEN, Tab.YOUTUBE, Tab.JOJ, Tab.DOWNLOADS, Tab.PREHRAJ, Tab.SETTINGS),
     val sectionOrder: List<String> = listOf("tabs", "ta3", "tyzden", "stvr", "yt"),
     val ta3Shows: List<Show> = TA3_SHOWS,
     val stvrShows: List<Show> = STVR_SHOWS,
@@ -107,7 +123,7 @@ data class UiState(
     val expandedItems: Set<String> = emptySet()
 )
 
-enum class Tab { EPISODES, STVR, TYZDEN, YOUTUBE, DOWNLOADS, SETTINGS, PREHRAJ }
+enum class Tab { EPISODES, STVR, TYZDEN, YOUTUBE, DOWNLOADS, SETTINGS, PREHRAJ, JOJ }
 
 enum class PrehrajLoginStatus { LOGGED_OUT, LOGGING_IN, LOGGED_IN, FAILED }
 
@@ -489,6 +505,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun shareEpisode(context: android.content.Context, episode: Episode) {
+        viewModelScope.launch {
+            android.widget.Toast.makeText(context, "Získavam URL videa…", android.widget.Toast.LENGTH_SHORT).show()
+            try {
+                val url = PlayResolver.resolve(episode)
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, episode.title)
+                    putExtra(android.content.Intent.EXTRA_TEXT, url)
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, "Zdieľať URL videa"))
+            } catch (e: Exception) {
+                AppLogger.e("Share", "Share failed for ${episode.title}: ${e.message}")
+                android.widget.Toast.makeText(context, "Nepodarilo sa zdieľať: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     fun setBrowseSort(sort: TmdbSort) {
         val genre = _state.value.browseGenre ?: return
         if (_state.value.browseSort == sort) return
@@ -728,7 +762,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // ─── UI helpers ────────────────────────────────────────────────────────────
 
     fun setSearchQuery(q: String) = _state.update { it.copy(searchQuery = q) }
-    fun selectTab(tab: Tab) = _state.update { it.copy(selectedTab = tab) }
+    fun selectTab(tab: Tab) {
+        _state.update { it.copy(selectedTab = tab) }
+        if (tab == Tab.JOJ && _state.value.jojShows.isEmpty() && !_state.value.jojShowsLoading) loadJojShows()
+    }
 
     val filteredEpisodes: List<Episode>
         get() {
@@ -784,6 +821,121 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 it.title.lowercase().contains(q) || it.date.contains(q)
             }
         }
+
+    // ─── JOJ Archive ───────────────────────────────────────────────────────────
+    // Poster-tile browse (joj.sk/relacie) — play/download only, never auto-downloaded (see
+    // AutoDownloadWorker/AppSettings.enabledShows(): JOJ shows aren't in any fixed show list).
+
+    /**
+     * Loads the shows grid — instantly from the on-disk cache if there is one (see
+     * [JojShowCache]), then silently re-scrapes in the background to refresh it once the cache
+     * is more than a day old. A cold start with no cache yet shows the loading spinner as before.
+     */
+    fun loadJojShows() {
+        val context = getApplication<Application>()
+        val cached = JojShowCache.load(context)
+        if (cached != null) {
+            _state.update { it.copy(jojShows = cached.shows, jojShowsLoading = false, jojShowsError = null) }
+            if (!JojShowCache.isStale(cached)) return
+        }
+        viewModelScope.launch {
+            if (_state.value.jojShows.isEmpty()) {
+                _state.update { it.copy(jojShowsLoading = true, jojShowsError = null) }
+            }
+            try {
+                val shows = JojScraper.fetchShows()
+                JojShowCache.save(context, shows)
+                _state.update { it.copy(jojShows = shows, jojShowsLoading = false, jojShowsError = null) }
+            } catch (e: Exception) {
+                _state.update {
+                    // Keep showing the (possibly stale) cached list rather than replacing it with an error
+                    if (it.jojShows.isNotEmpty()) it.copy(jojShowsLoading = false)
+                    else it.copy(jojShowsLoading = false, jojShowsError = "Načítanie zlyhalo: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun selectJojShow(show: JojShow) {
+        _state.update {
+            it.copy(
+                jojSelectedShow = show, jojShowDetail = null, jojEpisodes = emptyList(),
+                jojEpisodesPage = 0, jojHasMoreEpisodes = true, jojEpisodeLoadError = null,
+                jojSeasons = emptyList(), jojSeasonIndex = 0
+            )
+        }
+        viewModelScope.launch {
+            // Find all seasons first (one quick request), so season chips can be shown and
+            // pagination knows which season id to pass — the plain /epizody endpoint (no
+            // `season=` param) only ever serves the newest one.
+            try {
+                val seasons = JojScraper.fetchSeasons(show)
+                _state.update { if (it.jojSelectedShow == show) it.copy(jojSeasons = seasons) else it }
+            } catch (e: Exception) {
+                // falls back to the newest-season-only behaviour below
+            }
+            loadMoreJojEpisodes()
+        }
+        viewModelScope.launch {
+            try {
+                val detail = JojScraper.fetchShowDetail(show)
+                _state.update { if (it.jojSelectedShow == show) it.copy(jojShowDetail = detail) else it }
+            } catch (e: Exception) {
+                // backdrop/description are a nice-to-have; the episode list still works without them
+            }
+        }
+    }
+
+    fun backToJojShows() {
+        _state.update { it.copy(jojSelectedShow = null, jojShowDetail = null) }
+    }
+
+    fun setJojShowSearchQuery(q: String) = _state.update { it.copy(jojShowSearchQuery = q) }
+
+    val filteredJojShows: List<JojShow>
+        get() {
+            val q = _state.value.jojShowSearchQuery.trim().lowercase()
+            return if (q.isEmpty()) _state.value.jojShows
+            else _state.value.jojShows.filter { it.title.lowercase().contains(q) }
+        }
+
+    /** Switches to a different season chip: clears the episode list and loads that season from page 1. */
+    fun selectJojSeason(seasonIndex: Int) {
+        if (_state.value.jojSeasonIndex == seasonIndex) return
+        _state.update {
+            it.copy(
+                jojSeasonIndex = seasonIndex, jojEpisodes = emptyList(),
+                jojEpisodesPage = 0, jojHasMoreEpisodes = true, jojEpisodeLoadError = null
+            )
+        }
+        loadMoreJojEpisodes()
+    }
+
+    fun loadMoreJojEpisodes() {
+        val st = _state.value
+        val show = st.jojSelectedShow ?: return
+        if (st.jojLoadingEpisodes || !st.jojHasMoreEpisodes) return
+        val page = st.jojEpisodesPage + 1
+        val seasonId = st.jojSeasons.getOrNull(st.jojSeasonIndex)?.id
+        viewModelScope.launch {
+            _state.update { it.copy(jojLoadingEpisodes = true, jojEpisodeLoadError = null) }
+            try {
+                val newEpisodes = JojScraper.fetchEpisodes(show, page, seasonId)
+                _state.update {
+                    // ignore if the user switched shows/seasons meanwhile
+                    if (it.jojSelectedShow != show || it.jojSeasonIndex != st.jojSeasonIndex) it.copy(jojLoadingEpisodes = false)
+                    else it.copy(
+                        jojEpisodes = (it.jojEpisodes + newEpisodes).distinctBy { e -> e.url },
+                        jojEpisodesPage = page,
+                        jojHasMoreEpisodes = newEpisodes.isNotEmpty(),
+                        jojLoadingEpisodes = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(jojLoadingEpisodes = false, jojEpisodeLoadError = "Načítanie zlyhalo: ${e.message}") }
+            }
+        }
+    }
 
     // ─── Tyzden Shows ──────────────────────────────────────────────────────────
 
@@ -1049,7 +1201,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     else -> null
                 }
             }
-            val fixedTabs = listOf(Tab.DOWNLOADS, Tab.SETTINGS)
+            // JOJ has no per-show settings (no fixed list, no auto-download), so unlike the other
+            // tabs it isn't part of `sectionOrder` / reorderable in Settings — always right after
+            // the reorderable ones.
+            val fixedTabs = listOf(Tab.JOJ, Tab.DOWNLOADS, Tab.SETTINGS)
             return dynamicTabs + fixedTabs.filter { !dynamicTabs.contains(it) }
         }
     }

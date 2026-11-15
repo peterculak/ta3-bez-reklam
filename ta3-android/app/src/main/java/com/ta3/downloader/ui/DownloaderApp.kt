@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -126,6 +127,12 @@ fun DownloaderApp(viewModel: MainViewModel) {
                                 selected = state.selectedTab == Tab.YOUTUBE,
                                 onClick = { viewModel.selectTab(Tab.YOUTUBE) }
                             )
+                            Tab.JOJ -> TabItem(
+                                icon = Icons.Outlined.Tv,
+                                label = "JOJ archív",
+                                selected = state.selectedTab == Tab.JOJ,
+                                onClick = { viewModel.selectTab(Tab.JOJ) }
+                            )
                             Tab.DOWNLOADS -> TabItem(
                                 icon = Icons.Outlined.FolderOpen,
                                 label = "Stiahnuté (${state.downloadedFiles.size})",
@@ -169,6 +176,11 @@ fun DownloaderApp(viewModel: MainViewModel) {
                 modifier = Modifier.padding(innerPadding)
             )
             Tab.YOUTUBE -> YouTubeTab(
+                state = state,
+                viewModel = viewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+            Tab.JOJ -> JojTab(
                 state = state,
                 viewModel = viewModel,
                 modifier = Modifier.padding(innerPadding)
@@ -372,6 +384,10 @@ fun DownloaderApp(viewModel: MainViewModel) {
         onEpisode = { season, ep -> viewModel.searchBrowseEpisode(season, ep) },
         onBackToEpisodes = { viewModel.backToEpisodes() }
     )
+    // Full-screen JOJ show page, same idea
+    if (state.jojSelectedShow != null) {
+        JojShowDetailScreen(state = state, viewModel = viewModel)
+    }
     }
 }
 
@@ -903,7 +919,8 @@ fun EpisodeCard(
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit = {},
     onPlay: (() -> Unit)? = null,
-    onPlayLocal: (() -> Unit)? = null
+    onPlayLocal: (() -> Unit)? = null,
+    onShare: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -911,7 +928,29 @@ fun EpisodeCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
+            if (episode.thumbnailUrl != null) {
+                Box(
+                    Modifier.fillMaxWidth().aspectRatio(310f / 180f)
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .then(if (onPlay != null) Modifier.clickable(onClick = onPlay) else Modifier)
+                ) {
+                    coil.compose.AsyncImage(
+                        model = episode.thumbnailUrl, contentDescription = episode.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (onPlay != null) {
+                        Icon(
+                            Icons.Default.PlayCircle, contentDescription = "Prehrať video online",
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.align(Alignment.Center).size(44.dp)
+                        )
+                    }
+                }
+            }
+            Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (episode.date.isNotEmpty()) {
                     Text(episode.date, color = MaterialTheme.colorScheme.primary,
@@ -988,7 +1027,14 @@ fun EpisodeCard(
                             Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
                             Text("Stiahnuté", color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
-                        PlayButtons(onPlay, onPlayLocal, downloaded = true)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (onShare != null) {
+                                IconButton(onClick = onShare, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Outlined.Share, contentDescription = "Zdieľať", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            PlayButtons(onPlay, onPlayLocal, downloaded = true)
+                        }
                     }
                 }
                 else -> {
@@ -998,9 +1044,17 @@ fun EpisodeCard(
                             Spacer(Modifier.width(6.dp))
                             Text("Stiahnuť", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1)
                         }
-                        PlayButtons(onPlay, onPlayLocal, downloaded = false)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (onShare != null) {
+                                IconButton(onClick = onShare, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Outlined.Share, contentDescription = "Zdieľať", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            PlayButtons(onPlay, onPlayLocal, downloaded = false)
+                        }
                     }
                 }
+            }
             }
         }
     }
